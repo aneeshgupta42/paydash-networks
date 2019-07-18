@@ -3,6 +3,7 @@ import re
 
 
 def clean_title(x):
+
 	x = x.strip()
 	list = ['\AMr.', '\ASH', '\AKU ', '\AKU.', '\ADR ', '\ADR.', '\ADr.', '\AMISS ', '\AMrs.', '\AMrs ', '\ASHRI ', ' JI\Z', ' Ji\Z', '\ASUSHRI ', '\ASMT ', '\ASmt ', '\ASMT.','\AMs.', '\AMS.', '\ASir ', 'Sir\Z']
 	for k in list:
@@ -11,7 +12,10 @@ def clean_title(x):
 			k = k.replace('\Z', '')
 			x = x.replace(k, '')
 	x = x.strip()
+
 	return x
+
+
 def process_file():
 
 	df = pd.read_excel('../docs/20171113_MP_Transfers_Registration_Combined_April end.xlsx', usecols='A:JK')
@@ -32,9 +36,6 @@ def process_file():
 					 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6'], inplace=True)
 
 	df_blocks.drop(df_blocks.index[0], inplace=True)
-
-	#print(df_blocks.head())
-	#print(df_districts.head())
 
 	return df_blocks, df_districts
 
@@ -60,6 +61,7 @@ def reformat_months(df, dftype):
 	return df
 
 def split_to_months(df_registration):
+
 	baseline_df = df_registration.loc[:,'Baseline Information':'Unnamed: 39']
 	baseline_df['Designation'] = df_registration['Unnamed: 7']
 	baseline_df['block_name_baseline'] = df_registration['Unnamed: 3']
@@ -178,8 +180,6 @@ def main():
 	with pd.ExcelWriter('name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
 		blocks_merged.to_excel(writer, sheet_name='Block_Officials', index=False)
 		districts_merged.to_excel(writer, sheet_name='District_Officials', index=False)
-
-
 
 
 
