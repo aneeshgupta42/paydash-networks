@@ -30,7 +30,7 @@ def match_with_dash(df_networks_std, df_blocks_std):
 
 	def handle_dashes(row, df_blocks_std):
 
-		if not isinstance(row['mp_apo_block'], str):
+		if not isinstance(row['Location'], str):
 			return row
 
 		if row['block_prediction'] or row['district_prediction']:
@@ -39,20 +39,20 @@ def match_with_dash(df_networks_std, df_blocks_std):
 		if row['exact_match_blocks'] == 1 or row['exact_match_full_name'] == 1:
 			return row
 
-		if "," in row['mp_apo_block'] or ")" in row['mp_apo_block']:
+		if "," in row['Location'] or ")" in row['Location']:
 			return row
 
-		if "-" not in row['mp_apo_block']:
+		if "-" not in row['Location']:
 			return row
 
 		# No punctuation, with dash
-		row['mp_apo_block'] = remove_whitespace(row['mp_apo_block'])
+		row['Location'] = remove_whitespace(row['Location'])
 
 		# Check AGAR-MALWA - 67 is best cutoff
-		if "AGAR-MALWA" in row['mp_apo_block'] or fuzz.ratio("AGAR-MALWA", row['mp_apo_block']) > 67:
+		if "AGAR-MALWA" in row['Location'] or fuzz.ratio("AGAR-MALWA", row['Location']) > 67:
 
 			# Just AGAR-MALWA
-			if len(row['mp_apo_block'].split()) == 1:
+			if len(row['Location'].split()) == 1:
 				row['district_prediction'] = 'AGAR-MALWA'
 				row['district_prediction_score'] = 100
 			else:
@@ -61,9 +61,9 @@ def match_with_dash(df_networks_std, df_blocks_std):
 				row['district_prediction'] = 'AGAR-MALWA'
 				row['district_prediction_score'] = 100
 				# if A-M at beginning
-				if get_AM_word_index(row['mp_apo_block']) == 0:
+				if get_AM_word_index(row['Location']) == 0:
 
-					ratio_calc = list(process.extractOne(str(row['mp_apo_block'].split()[1]), blocks_list, scorer = fuzz.ratio))
+					ratio_calc = list(process.extractOne(str(row['Location'].split()[1]), blocks_list, scorer = fuzz.ratio))
 
 					row['block_prediction'] = ratio_calc[0]
 					row['block_prediction_score'] = ratio_calc[1]
@@ -71,7 +71,7 @@ def match_with_dash(df_networks_std, df_blocks_std):
 				# if A-M at end
 				else:
 
-					ratio_calc = list(process.extractOne(str(row['mp_apo_block'].split()[0]), blocks_list, scorer = fuzz.ratio))
+					ratio_calc = list(process.extractOne(str(row['Location'].split()[0]), blocks_list, scorer = fuzz.ratio))
 
 					row['block_prediction'] = ratio_calc[0]
 					row['block_prediction_score'] = ratio_calc[1]
@@ -79,7 +79,7 @@ def match_with_dash(df_networks_std, df_blocks_std):
 			# Incorrect spellings of AGAR-MALWA solved with ration score above
 			# Assume "block-district"
 
-			split_block_name_list = row['mp_apo_block'].split('-')
+			split_block_name_list = row['Location'].split('-')
 
 			# block prediction
 			location_list = list(df_blocks_std['block_name'])

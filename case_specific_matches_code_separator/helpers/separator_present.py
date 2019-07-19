@@ -59,12 +59,12 @@ def make_predictions(df):
     blist.sort()
     blist = [b.upper() for b in blist]
 
-    df['separator_present'] = df['mp_apo_block'].fillna('').apply(lambda x: int((k in x) | (',' in x)))
+    df['separator_present'] = df['Location'].fillna('').apply(lambda x: int((k in x) | (',' in x)))
     df['block_name'] = ''
     df['district_name'] = ''
 
-    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'block_name'] = df['mp_apo_block'].fillna('').apply(lambda x: splice1(x.upper()).strip())
-    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'district_name'] = df['mp_apo_block'].fillna('').apply(lambda x: splice2(x.upper()).strip().strip(k))
+    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'block_name'] = df['Location'].fillna('').apply(lambda x: splice1(x.upper()).strip())
+    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'district_name'] = df['Location'].fillna('').apply(lambda x: splice2(x.upper()).strip().strip(k))
 
     ourb = list(df['block_name'].unique())
     ourd = list(df['district_name'].unique())

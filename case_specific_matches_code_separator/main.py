@@ -20,11 +20,11 @@ def combine_blocks_and_districts(row):
 def process_files():
 
 	df_networks = \
-			pd.read_excel('../docs/network_mp_apo_responses_from_baseline.xlsx')
+			pd.read_csv('../docs/block_level_responses_all.csv')
 
-	# set all mp_apo_blocks from Nan to None
-	df_networks['mp_apo_block'] = \
-			df_networks['mp_apo_block'].replace({pd.np.nan: None})
+	# set all Locations from Nan to None
+	df_networks['Location'] = \
+			df_networks['Location'].replace({pd.np.nan: None})
 
 	df_blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
 
@@ -41,7 +41,7 @@ def hit_cases(df_networks, df_blocks):
 	
 	#df_networks = df_networks.iloc[:400]
 
-	df_networks = df_networks[['individual_uid', 'district', 'samerank', 'mp_apo_name', 'mp_apo_block']]
+	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 'Location']]
 
 	df_networks['block_prediction'] = None
 	df_networks['block_prediction_score'] = None
@@ -73,9 +73,9 @@ def main():
 
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
-	df_networks_final.drop(columns=['mp_apo_block_std'], inplace=True)
-
-	df_networks_final.to_csv('match_10072019.csv', index=False)
+	df_networks_final.drop(columns=['Location_std'], inplace=True)
+	#print(df_networks_final.head(50))
+	df_networks_final.to_csv('match_19072019.csv', index=False)
 
 
 if __name__ == '__main__':

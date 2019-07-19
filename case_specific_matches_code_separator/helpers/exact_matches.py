@@ -20,32 +20,32 @@ def check_exact_match(df_networks, df_blocks):
 
 	def set_predictions(row, df_blocks):
 		if row['exact_match_blocks'] == 1:
-			row['block_prediction'] = row['mp_apo_block']
+			row['block_prediction'] = row['Location']
 			row['block_prediction_score'] = 100
 
 		if row['exact_match_full_name'] == 1:
 			row['block_prediction'] = \
-				(df_blocks.loc[df_blocks['full_name_std'] == row['mp_apo_block_std'], 'block_name']).values[0]
+				(df_blocks.loc[df_blocks['full_name_std'] == row['Location_std'], 'block_name']).values[0]
 			row['block_prediction_score'] = 100
 
 			row['district_prediction'] = \
-				(df_blocks.loc[df_blocks['full_name_std'] == row['mp_apo_block_std'], 'district_name']).values[0]
+				(df_blocks.loc[df_blocks['full_name_std'] == row['Location_std'], 'district_name']).values[0]
 			row['district_prediction_score'] = 100
 
 		return row
 
 
 	df_networks['exact_match_blocks'] = \
-		df_networks['mp_apo_block_std'].isin(df_blocks['block_name_std']).astype(int)
+		df_networks['Location_std'].isin(df_blocks['block_name_std']).astype(int)
 
 	df_networks['exact_match_full_name'] = \
-		df_networks['mp_apo_block_std'].isin(df_blocks['full_name_std']).astype(int)
+		df_networks['Location_std'].isin(df_blocks['full_name_std']).astype(int)
 
 	df_networks = df_networks.apply(lambda x: set_predictions(x, df_blocks), axis=1)
 
 	# Percentage of exact matches
-	#print(df_networks['exact_match_blocks'].value_counts(normalize=True).mul(100).astype(str)+'%')
-	#print(df_networks['exact_match_full_name'].value_counts(normalize=True).mul(100).astype(str)+'%')
+	print(df_networks['exact_match_blocks'].value_counts(normalize=True).mul(100).astype(str)+'%')
+	print(df_networks['exact_match_full_name'].value_counts(normalize=True).mul(100).astype(str)+'%')
 
 	return df_networks
 
@@ -55,8 +55,8 @@ def check_exact_match(df_networks, df_blocks):
 def process_exact_matches(df_networks, df_blocks):
 	
 	# first remove all punctuation, extra whitespace, and set to uppercase
-	df_networks['mp_apo_block_std'] = \
-		df_networks['mp_apo_block'].apply(standardize_string)
+	df_networks['Location_std'] = \
+		df_networks['Location'].apply(standardize_string)
 	df_blocks['block_name_std'] = \
 		df_blocks['block_name'].apply(standardize_string)
 	df_blocks['full_name_std'] = \
@@ -64,8 +64,8 @@ def process_exact_matches(df_networks, df_blocks):
 
 	df_networks = check_exact_match(df_networks, df_blocks)
 	
-	df_networks = df_networks[['individual_uid', 'district', 'mp_apo_name', 
-							   'mp_apo_block', 'mp_apo_block_std', 
+	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 
+							   'Location', 'Location_std', 
 							   'block_prediction', 'block_prediction_score', 
 							   'district_prediction', 
 							   'district_prediction_score', 
