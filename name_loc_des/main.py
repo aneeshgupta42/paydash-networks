@@ -15,7 +15,6 @@ def clean_title(x):
 
 	return x
 
-
 def process_file():
 
 	df = pd.read_excel('../docs/20171113_MP_Transfers_Registration_Combined_April end.xlsx', usecols='A:JK')
@@ -36,6 +35,7 @@ def process_file():
 					 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6'], inplace=True)
 
 	df_blocks.drop(df_blocks.index[0], inplace=True)
+
 
 	return df_blocks, df_districts
 
@@ -138,7 +138,6 @@ def perform_merge(df_registration):
 	result = pd.merge(result, oct_df, on='Individual_UID', how='outer')
 
 	#print(result)
-
 	return result
 
 
@@ -180,7 +179,6 @@ def main():
 	with pd.ExcelWriter('name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
 		blocks_merged.to_excel(writer, sheet_name='Block_Officials', index=False)
 		districts_merged.to_excel(writer, sheet_name='District_Officials', index=False)
-
 
 
 if __name__ == '__main__':

@@ -3,24 +3,6 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
 
-
-def split_on_separator(df_networks_std, df_blocks_std):
-
-	k = ')'
-
-	df_networks = df_networks_std.loc[~df_networks_std['mp_apo_block'].str.contains(',', na=True)]
-	print(df_networks)
-
-	df_networks_dash = df_networks_std.loc[df_networks_std['mp_apo_block'].str.contains('-', na=False)]
-	print(df_networks_dash)
-
-	#df_networks_no_dash = df_networks_std.loc[~df_networks_std['mp_apo_block'].str.contains('-', na=True)]
-	#print(df_networks_no_dash)
-
-	#return df_networks_no_dash, df_networks_dash
-	return df_networks_dash
-
-
 def match_with_dash(df_networks_std, df_blocks_std):
 
 	def remove_whitespace(s):
