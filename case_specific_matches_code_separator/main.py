@@ -75,7 +75,7 @@ def main():
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
 	#print(df_networks_final.head(50))
-	df_networks_final.to_csv('match_19072019.csv', index=False)
+	df_networks_final.to_csv('./output/match_22072019.csv', index=False)
 
 
 if __name__ == '__main__':

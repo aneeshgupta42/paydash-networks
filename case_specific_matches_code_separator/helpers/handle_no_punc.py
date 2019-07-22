@@ -1,12 +1,8 @@
 import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
-#import lev_alg
-
 import numpy as np
 import math
-
-
 
 def handle_one_word(row, df_blocks_std):
 	
