@@ -1,12 +1,13 @@
 import pandas as pd
 from fuzzywuzzy import process
 import re
+import datetime
 
-pd.options.mode.chained_assignment = None
+
 def clean_title(x):
 
 	x = x.strip()
-	list = ['\AMr.', '\ASH', '\AKU ', '\AKU.', '\ADR ', '\ADR.', '\ADr.', '\AMISS ', '\AMrs.', '\AMrs ', '\ASHRI ', ' JI\Z', ' Ji\Z', '\ASUSHRI ', '\ASMT ', '\ASmt ', '\ASMT.','\AMs.', '\AMS.', '\ASir ', 'Sir\Z']
+	list = ['\AMr.', '\AMR ', '\ASH', '\AKU ', '\AKu.', '\AKu', '\AKU.', '\ADR ', '\ADR.', '\ADr.', '\AMISS ', '\AMrs.', '\AMrs ', '\ASHRI ', ' JI\Z', ' Ji\Z', '\ASUSHRI ', '\ASMT ', '\ASmt ', '\ASMT.','\AMs.', '\AMS.', '\ASir ', 'Sir\Z']
 	for k in list:
 		if(re.search(k,x)):
 			k = k.replace('\A', '')
@@ -20,34 +21,51 @@ def match(x, list):
     ret = temp[1]
     if x == '':
         ret = ''
-    return ret
+    return ret + ',' + str(temp[2])
 
-responses = pd.read_excel('../docs/location_matched_mp_apo_baseline.xlsx')
-responses = responses[['mp_apo_name', 'matched_block_name']]
-responses.columns = ['mp_apo_name', 'block_name']
+pd.options.mode.chained_assignment = None
+
+output_date = datetime.datetime.now().strftime("%d%m%Y")
+responses = pd.read_csv('../docs/location_matched_blocks.csv')
+responses = responses[['Res_uid', 'Name', 'Designation', 'Location', 'block_prediction', 'district_prediction']]
+responses.columns = ['respondent_uid','mp_apo_name','Designation', 'Location', 'block_prediction', 'district_prediction']
 print(responses.columns)
+
 responses['mp_apo_name'] = responses['mp_apo_name'].apply(lambda x: clean_title(str(x)))
 
-registration = pd.read_excel('name_loc_designation_match_edited.xlsx', sheet_name = 0)
-df_baseline = registration[['Individual_UID', 'block_name_baseline', 'Name_Baseline']]
+registration = pd.read_excel('../docs/name_loc_designation_match_edited.xlsx', sheet_name = 0)
+df_registration = registration[['Individual_UID','Name_Baseline','district_name_baseline','block_name_baseline','Designation_Baseline','district_name_april','block_name_april','Designation_April']]
+df_registration['Individual_UID'] = df_registration['Individual_UID'].apply(lambda x: int(x))
+df_registration['Name_Baseline'] = df_registration['Name_Baseline'].fillna('')
+df_registration = df_registration.loc[df_registration['Name_Baseline']!='']
 
-df_baseline['Individual_UID'] = df_baseline['Individual_UID'].apply(lambda x: int(x))
-df_baseline['Name_Baseline'] = df_baseline['Name_Baseline'].fillna('')
-df_baseline = df_baseline.loc[df_baseline['Name_Baseline']!='']
+name_uid = pd.Series(df_registration.Individual_UID.values,index=df_registration.Name_Baseline).to_dict()
+uid_block = pd.Series(df_registration.block_name_baseline.values,index=df_registration.Individual_UID).to_dict()
+uid_district = pd.Series(df_registration.district_name_baseline.values,index=df_registration.Individual_UID).to_dict()
+uid_block_april = pd.Series(df_registration.block_name_april.values,index=df_registration.Individual_UID).to_dict()
 
-name_uid = pd.Series(df_baseline.Individual_UID.values,index=df_baseline.Name_Baseline).to_dict()
-uid_block = pd.Series(df_baseline.block_name_baseline.values,index=df_baseline.Individual_UID).to_dict()
+baseline_blocks = list(df_registration['block_name_baseline'].fillna('').unique())
+baseline_names =  list(df_registration['Name_Baseline'].fillna('').unique())
 
-baseline_blocks = list(df_baseline['block_name_baseline'].fillna('').unique())
-baseline_names =  list(df_baseline['Name_Baseline'].fillna('').unique())
 print('Begin Matching...')
-responses['matched_name'] = responses['mp_apo_name'].apply(lambda x: match(str(x), baseline_names))
+
+responses['matching'] = responses['mp_apo_name'].apply(lambda x: match(str(x), baseline_names))
+responses['predicted_name'] = responses['matching'].apply(lambda x: x.split(',')[0])
+responses['name_score'] = responses['matching'].apply(lambda x: x.split(',')[1])
+
 print('Done Matching...')
-# print(responses['matched_name'])
 print('Adding UIDs...')
-responses['matched_uid'] = responses['matched_name'].apply(lambda x: name_uid[x] if x!='' else '')
-responses['matched_block'] = responses['matched_uid'].apply(lambda x: uid_block[x] if x!='' else '')
+
+responses['matched_uid'] = responses['predicted_name'].apply(lambda x: name_uid[x] if x!='' else '')
+responses['matched_block_baseline'] = responses['matched_uid'].apply(lambda x: uid_block[x] if x!='' else '')
+responses['matched_block_april'] = responses['matched_uid'].apply(lambda x: uid_block_april[x] if x!='' else '')
+responses['matched_district'] = responses['matched_uid'].apply(lambda x: uid_district[x] if x!='' else '')
 responses['blocks_exact_match'] = 0
-responses.loc[responses['matched_block'] == responses['block_name'], 'blocks_match'] = 1
-responses = responses[['mp_apo_name', 'block_name', 'matched_name', 'matched_block', 'blocks_match', 'matched_uid']]
-responses.to_excel('matching_names_output.xlsx', index = False)
+responses.loc[(responses['matched_block_baseline'] == responses['block_prediction']) | (responses['matched_block_april'] == responses['block_prediction']), 'blocks_exact_match'] = 1
+
+responses['district_exact_match'] = ''
+responses.loc[responses['matched_district'] == responses['district_prediction'], 'district_exact_match'] = 1
+responses.loc[responses['district_prediction'].fillna('') == '', 'district_exact_match'] = ''
+responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'district_prediction', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid']]
+
+responses.to_excel('../docs/matching_names_output_' + output_date + '.xlsx', index = False)
