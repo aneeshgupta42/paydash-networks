@@ -2,6 +2,7 @@ import pandas as pd
 from fuzzywuzzy import process
 import re
 import datetime
+from tqdm import tqdm
 
 
 def clean_title(x):
@@ -24,14 +25,15 @@ def match(x, list):
     return ret + ',' + str(temp[2])
 
 pd.options.mode.chained_assignment = None
+tqdm.pandas()
 
 output_date = datetime.datetime.now().strftime("%d%m%Y")
 responses = pd.read_csv('../docs/location_matched_blocks.csv')
 responses = responses[['Res_uid', 'Name', 'Designation', 'Location', 'block_prediction', 'district_prediction']]
 responses.columns = ['respondent_uid','mp_apo_name','Designation', 'Location', 'block_prediction', 'district_prediction']
-print(responses.columns)
+#print(responses.columns)
 
-responses['mp_apo_name'] = responses['mp_apo_name'].apply(lambda x: clean_title(str(x)))
+responses['mp_apo_name'] = responses['mp_apo_name'].apply(lambda x: clean_title(str(x))).fillna('')
 
 registration = pd.read_excel('../docs/name_loc_designation_match_edited.xlsx', sheet_name = 0)
 df_registration = registration[['Individual_UID','Name_Baseline','district_name_baseline','block_name_baseline','Designation_Baseline','district_name_april','block_name_april','Designation_April']]
@@ -47,9 +49,9 @@ uid_block_april = pd.Series(df_registration.block_name_april.values,index=df_reg
 baseline_blocks = list(df_registration['block_name_baseline'].fillna('').unique())
 baseline_names =  list(df_registration['Name_Baseline'].fillna('').unique())
 
-print('Begin Matching...')
+print('\nBegin Matching...\n')
 
-responses['matching'] = responses['mp_apo_name'].apply(lambda x: match(str(x), baseline_names))
+responses['matching'] = responses['mp_apo_name'].progress_apply(lambda x: match(str(x), baseline_names) if ((x!='') & (x!='nan')) else ',')
 responses['predicted_name'] = responses['matching'].apply(lambda x: x.split(',')[0])
 responses['name_score'] = responses['matching'].apply(lambda x: x.split(',')[1])
 
