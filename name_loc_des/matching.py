@@ -76,5 +76,7 @@ responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exac
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'matched_block_april'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'matched_district'] = ''
 
-responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'district_prediction', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid']]
+responses['approach'] = responses['matched_uid'].fillna('').apply(lambda x: 1 if x!='' else 0)
+
+responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'district_prediction', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid', 'approach']]
 responses.to_excel('../docs/matching_names_output_' + output_date + '.xlsx', index = False)
