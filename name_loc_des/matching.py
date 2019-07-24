@@ -22,7 +22,7 @@ def process_files():
 
 
 	responses = pd.read_csv('../case_specific_matches_code_separator/output/match_22072019.csv')
-	responses = responses.iloc[:30]
+	responses = responses.iloc[500:600]
 	responses = responses[['Res_uid', 'Name' , 'Designation', 'Location', 'block_prediction', 'district_prediction']]
 	
 	responses['Name'] = responses['Name'].apply(lambda x: clean_title(str(x)))
@@ -33,7 +33,14 @@ def process_files():
 	#df_baseline = df_baseline.iloc[:100]
 	df_baseline['Individual_UID'] = df_baseline['Individual_UID'].apply(lambda x: int(x))
 	df_baseline['Name_Baseline'] = df_baseline['Name_Baseline'].fillna('').str.upper()
-	df_baseline = df_baseline.loc[df_baseline['Name_Baseline']!='']
+	df_baseline = df_baseline.loc[df_baseline['Name_Baseline'] != '']
+	df_baseline = df_baseline.loc[(df_baseline['Name_Baseline']).notna() & 
+								  (df_baseline['district_name_baseline']).notna() &
+								  (df_baseline['block_name_baseline']).notna()]
+	
+	df_baseline = df_baseline.loc[pd.notna(df_baseline['Name_Baseline']) & 
+								  pd.notna(df_baseline['district_name_baseline']) &
+								  pd.notna(df_baseline['block_name_baseline'])]						
 
 	print(df_baseline)
 
@@ -78,28 +85,16 @@ def perform_name_matching_name_start(responses, df_baseline):
 	# WILL ACCOUNT FOR BOTH TRANSFERS ACROSS MONTHS AND IF THE PERSON HAS MULTIPLE
 	# POSITION IN DIFFERENT BLOCKS/ALSO DISTRICTS
 	# create dicts for getting matches - problem because of repeated names/uids
-	#name_uid = defaultdict(list)
-	#name_uid = dict()
-	#for name in list(df_baseline['Name_Baseline']):
-	#	name_uid[name] = list(df_baseline.loc[df_baseline['Name_Baseline'] == name, 'Individual_UID'])
 	name_uid = {name:list(df_baseline.loc[df_baseline['Name_Baseline'] == name, 'Individual_UID']) for name in list(df_baseline['Name_Baseline'])}
-	#[name_uid[name] = list(df_baseline.loc[df_baseline['Name_Baseline'] == name, 'Individual_UID']) for name in list(df_baseline['Name_Baseline'])]
-	print(name_uid)
+	#print(name_uid)
 	
 	uid_block = {uid:list(df_baseline.loc[df_baseline['Individual_UID'] == uid, 'block_name_baseline']) for uid in list(df_baseline['Individual_UID'])}
-	#for uid in list(df_baseline['Individual_UID']):
-	#	uid_block[uid] = list(df_baseline.loc[df_baseline['Individual_UID'] == uid, 'block_name_baseline'])
-	print(uid_block)
+	#print(uid_block)
 
 	uid_district = {uid:list(df_baseline.loc[df_baseline['Individual_UID'] == uid, 'district_name_baseline']) for uid in list(df_baseline['Individual_UID'])}
-	print('uid_district')
-	print(uid_district)
-	#for uid in list(df_baseline['Individual_UID']):
-	#	uid_district[uid] = list(df_baseline.loc[df_baseline['Individual_UID'] == uid, 'district_name_baseline'])
-
-	#name_uid = pd.Series(df_baseline.Individual_UID.values, index=df_baseline.Name_Baseline).to_dict()
-	#uid_block = pd.Series(df_baseline.block_name_baseline.values, index=df_baseline.Individual_UID).to_dict()
-	#uid_district = pd.Series(df_baseline.district_name_baseline.values, index=df_baseline.Individual_UID).to_dict()	
+	#print('uid_district')
+	#print(uid_district)
+	
 	
 	responses['matched_uid'] = responses['matched_name_token_sort'].apply(lambda x: name_uid[x][0] if x != None else '')
 	#print(responses['matched_uid'])
@@ -109,13 +104,13 @@ def perform_name_matching_name_start(responses, df_baseline):
 	
 	responses['matched_block'] = \
 		responses.apply(lambda x: list(process.extractOne(x['block_prediction'], uid_block[x['matched_uid']], scorer = fuzz.ratio))[0] if x['matched_uid'] != '' else '', axis=1)
-	print('matched_block')
+	#print('matched_block')
 	#print(responses)
 	#responses['matched_district'] = responses['matched_uid'].apply(lambda x: uid_district[x] if x != '' else '')
 	
 	responses['matched_district'] = \
 		responses.apply(lambda x: list(process.extractOne(x['district_prediction'], uid_district[x['matched_uid']], scorer = fuzz.ratio))[0] if x['matched_uid'] != '' and isinstance(x['district_prediction'], str) else '', axis=1)
-	print(responses)
+	#print(responses)
 	# only set for not null
 	responses.loc[responses['matched_name_token_sort'].notna(), 'blocks_exact_match'] = 0
 	responses.loc[responses['matched_block'] == responses['block_prediction'], 'blocks_exact_match'] = 1
@@ -130,26 +125,50 @@ def perform_name_matching_name_start(responses, df_baseline):
 
 
 def match_loc_start(row, df_baseline):
+	
 	if row['Name'] == 'nan':
 		print('in none')
 		row['matched_name_token_sort'] = None
 		row['matched_name_confidence'] = None
 		return row
 
-	df_baseline_block = df_baseline.loc[df_baseline['block_name_baseline'] == row['block_prediction']]
 
-	baseline_names = list(df_baseline_block['Name_Baseline'].fillna('').unique())
+	if isinstance(row['district_prediction'], str):
+		df_baseline_subset = df_baseline.loc[df_baseline['district_name_baseline'] == row['district_prediction']]
+		print('district')
+	else:
+		print('block')
+		df_baseline_subset = df_baseline.loc[df_baseline['block_name_baseline'] == row['block_prediction']]
+	
+
+	
+
+	baseline_names = list(df_baseline_subset['Name_Baseline'].fillna('').unique())
 	print(baseline_names)
 	
 	if baseline_names:
 		# get other calcs also to see best
+		ratio_calc = list(process.extractOne(row['Name'], baseline_names, scorer = fuzz.ratio))
+		partial_ratio_calc = list(process.extractOne(row['Name'], baseline_names, scorer = fuzz.partial_ratio))
 		token_sort_ratio_calc = list(process.extractOne(row['Name'], baseline_names, scorer = fuzz.token_sort_ratio))
+		token_set_ratio_calc = list(process.extractOne(row['Name'], baseline_names, scorer = fuzz.token_set_ratio))
+
+		print(row['Name'])
+		print(ratio_calc)
+		print(partial_ratio_calc)
+		print(token_sort_ratio_calc)
+		print(token_set_ratio_calc)
+
+
 		row['matched_name_token_sort'] = token_sort_ratio_calc[0]
 		row['matched_name_confidence'] = token_sort_ratio_calc[1]
 	else:
 		row['matched_name_token_sort'] = ''
 		row['matched_name_confidence'] = ''
 	
+	#row['matched_uid'] = 
+
+
 	return row
 
 
@@ -172,9 +191,9 @@ def main():
 	pd.options.mode.chained_assignment = None
 	responses, df_baseline = process_files()
 
-	#responses_name_start = perform_name_matching_name_start(responses, df_baseline)
-
-	responses_loc_start = perform_name_matching_loc_start(responses, df_baseline)
+	responses_name_start = perform_name_matching_name_start(responses, df_baseline)
+	responses_name_start.to_csv('matching_names_start_output_23072019.csv', index = False)
+	#responses_loc_start = perform_name_matching_loc_start(responses, df_baseline)
 
 	#responses.to_excel('matching_names_output.xlsx', index = False)
 
