@@ -23,6 +23,12 @@ def check_exact_match(df_networks, df_blocks):
 			row['block_prediction'] = row['Location']
 			row['block_prediction_score'] = 100
 
+			# get corresponding district of matched block
+			row['district_prediction'] = \
+				(df_blocks.loc[df_blocks['block_name'] == row['Location_std'], 'district_name']).values[0]
+			row['district_prediction_score'] = 100
+
+
 		if row['exact_match_full_name'] == 1:
 			row['block_prediction'] = \
 				(df_blocks.loc[df_blocks['full_name_std'] == row['Location_std'], 'block_name']).values[0]
@@ -71,4 +77,6 @@ def process_exact_matches(df_networks, df_blocks):
 							   'district_prediction_score', 
 							   'exact_match_blocks', 'exact_match_full_name']]
 
+	print(df_networks)
+	print(df_blocks)
 	return df_networks, df_blocks

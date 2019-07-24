@@ -58,8 +58,8 @@ def hit_cases(df_networks, df_blocks):
 
 	df_networks_std = \
 				handle_no_punc.handle_cases(df_networks_std, df_blocks_std)
-	print('after all')
-	print(df_networks_std)
+	#print('after all')
+	#print(df_networks_std)
 
 	return df_networks_std
 
@@ -70,12 +70,13 @@ def main():
 	pd.options.mode.chained_assignment = None  # default='warn'
 
 	df_networks, df_blocks = process_files()
+	print(df_blocks.head(100))
 
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
-	#print(df_networks_final.head(50))
-	df_networks_final.to_csv('./output/match_22072019.csv', index=False)
+	print(df_networks_final.head(50))
+	df_networks_final.to_csv('./output/match_24072019.csv', index=False)
 
 
 if __name__ == '__main__':
