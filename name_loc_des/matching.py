@@ -8,7 +8,7 @@ from tqdm import tqdm
 def clean_title(x):
 
 	x = x.strip()
-	list = ['\ASushri','\AMr.', '\AMR ','\AMR.','\ASH ', '\AKU ', '\AKu.', '\AKu ', '\AKU.', '\ADR ', '\ADR.', '\ADr.', '\AMISS ', '\AMrs.', '\AMrs ', '\AMRS', '\ASHRI ', ' JI\Z', ' Ji\Z', '\ASUSHRI ', '\ASMT ', '\ASmt ', '\ASMT.','\AMs.', '\AMS.', '\ASir ', 'Sir\Z']
+	list = ['\ASushri','\AMr.', '\AMR ','\AMR.','\ASH ', '\AKU ', '\AKu.', '\AKu ', '\AKU.', '\ADR ', '\ADR.', '\ADr.', '\AMISS ', '\AMrs.', '\AMrs ', '\AMRS', '\ASHRI ', ' JI\Z', ' Ji\Z', '\ASUSHRI ', '\ASMT ', '\ASmt ', '\ASMT.','\AMs.', '\AMS.', '\ASir ', 'Sir\Z', 'SIR\Z']
 	for k in list:
 		if(re.search(k,x)):
 			k = k.replace('\A', '')
@@ -63,7 +63,7 @@ responses['matched_block_baseline'] = responses['matched_uid'].apply(lambda x: u
 responses['matched_block_april'] = responses['matched_uid'].apply(lambda x: uid_block_april[x] if x!='' else '')
 responses['matched_district'] = responses['matched_uid'].apply(lambda x: uid_district[x] if x!='' else '')
 responses['blocks_exact_match'] = 0
-responses.loc[(responses['matched_block_baseline'] == responses['block_prediction']) | (responses['matched_block_april'] == responses['block_prediction']), 'blocks_exact_match'] = 1
+responses.loc[(responses['matched_block_baseline'].apply(lambda x: x.replace('_', ' ')) == responses['block_prediction']) | (responses['matched_block_april'].apply(lambda x: x.replace('_', ' ')) == responses['block_prediction']), 'blocks_exact_match'] = 1
 
 responses['district_exact_match'] = 0
 responses.loc[responses['matched_district'] == responses['district_prediction'], 'district_exact_match'] = 1
