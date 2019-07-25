@@ -15,13 +15,13 @@ def process_files():
 	#responses = pd.read_csv('../case_specific_matches_code_separator/output/match_24072019.csv')
 	responses = pd.read_excel('../docs/matching_names_output_24072019.xlsx')
 	print(responses)
-	responses = responses.loc[responses['approach'] == 0]
-	print(responses)
-	responses = responses.iloc[:100]
+	#responses = responses.loc[responses['approach'] == 0]
+	#print(responses)
+	#responses = responses.iloc[:100]
 	#responses = responses[['Res_uid', 'Name' , 'Designation', 'Location', 'block_prediction', 'district_prediction']]
 	# From Aneesh's code
-	responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 'Location', 'block_prediction', 'district_prediction']]
-	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
+	#responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 'Location', 'block_prediction', 'district_prediction', 'approach']]
+	#responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
 	
 	#responses['Name'] = responses['Name'].apply(lambda x: clean_title(str(x)))
 	print(responses)
@@ -48,12 +48,19 @@ def process_files():
 def match_loc_start(row, df_baseline):
 	#print(row['Name'])
 	if row['Name'] == 'NAN':
-		print('in none')
+		#print('in none')
 		row['matched_name_token_sort'] = None
 		row['matched_name_confidence'] = None
 		return row
+	if isinstance(row['district_prediction'], str):
+		row['district_prediction'] = row['district_prediction'].strip()
 
 	df_baseline_subset = df_baseline.loc[df_baseline['district_name_baseline'] == row['district_prediction']]
+	if row['Name'] == 'AJEET SINGH':
+		print('AJEET SINGH')
+		print(row)
+		print(df_baseline_subset)
+	#print(row['district_prediction'])
 	#print(df_baseline_subset)
 
 	# grab just initials of row's Name and all df_baseline_subset's name_baselines
@@ -87,17 +94,24 @@ def match_loc_start(row, df_baseline):
 		#print(token_sort_ratio_calc)
 		#print(token_set_ratio_calc)
 
-		print(token_sort_ratio_calc[0])
-		print(df_baseline_subset)
-		row['matched_name_token_sort'] = token_sort_ratio_calc[0]
+		#print(token_sort_ratio_calc[0])
+		#print(df_baseline_subset)
+		#row['matched_name_token_sort'] = token_sort_ratio_calc[0]
 		row['matched_name_token_sort'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline_initial'] == token_sort_ratio_calc[0], 'Name_Baseline']).values[0]
 		row['matched_name_confidence'] = token_sort_ratio_calc[1]
 		# need to add matched uid, block, and district
 		#name_uid = {name:list(df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == name, 'Individual_UID']) for name in list(df_baseline_subset['Name_Baseline'])}
 		row['matched_uid'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
-		#print(row['matched_uid'])
+		#print(row['Name'])
+		
+		
 		row['matched_block'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'block_name_baseline']).values[0]
-		row['matched_district'] = row['matched_block'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'district_name_baseline']).values[0]
+		#if row['Name'] == 'CHANDAR MANDLOI':
+		#	print('Chandar Singh Man')
+		#	print(df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'block_name_baseline'])
+		#	print(row['matched_block'])
+
+		row['matched_district'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'district_name_baseline']).values[0]
 	else:
 		row['matched_name_token_sort'] = ''
 		row['matched_name_confidence'] = ''
@@ -112,20 +126,25 @@ def match_loc_start(row, df_baseline):
 
 
 def perform_name_matching_loc_start(responses, df_baseline):
+	responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 'Location', 'block_prediction', 'district_prediction', 'approach']]
+	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
 
 	print('Begin matching starting with locations...')
 	# for each row look within the block_prediction block in df_baseline 
 	responses = responses.apply(lambda x: match_loc_start(x, df_baseline), axis=1)
 	print('Done matching starting with locations...')
-	responses['Approach'] = 2
+	responses['approach'] = 2
 	
 	responses.loc[responses['matched_name_token_sort'].notna(), 'blocks_exact_match'] = 0
 	responses.loc[responses['matched_block'] == responses['block_prediction'], 'blocks_exact_match'] = 1
 
-	responses.loc[responses['matched_name_token_sort'].notna(), 'districts_exact_match'] = 0
-	responses.loc[responses['matched_district'] == responses['district_prediction'], 'districts_exact_match'] = 1
+	responses.loc[responses['matched_name_token_sort'].notna(), 'district_exact_match'] = 0
+	responses.loc[responses['matched_district'] == responses['district_prediction'], 'district_exact_match'] = 1
 
-
+	responses.rename(columns={'Name': 'mp_apo_name', 
+							  'matched_name_token_sort': 'predicted_name',
+							  'matched_name_confidence': 'name_score',
+							  'matched_block': 'matched_block_baseline'}, inplace=True)
 	print(responses)
 
 	return responses
@@ -136,17 +155,21 @@ def main():
 	pd.options.mode.chained_assignment = None
 	responses, df_baseline = process_files()
 
-	responses_loc_start = perform_name_matching_loc_start(responses, df_baseline)
+	responses.loc[responses['approach'] == 0] = perform_name_matching_loc_start(responses, df_baseline)
+	
+	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
+	responses.loc[responses['Name'] == 'NAN', 'approach'] = ''
 
-	responses_loc_start = \
-		responses_loc_start[['respondent_uid', 'Name', 'Designation', 'Location',
+	responses = \
+		responses[['respondent_uid', 'Name', 'Designation', 'Location',
 							'block_prediction', 'district_prediction',
-							'matched_name_token_sort', 
-							'matched_name_confidence', 'blocks_exact_match',
-							'districts_exact_match', 'Approach']]
+							'predicted_name', 'name_score', 'matched_uid',
+							'matched_block_baseline', 'matched_block_april',
+							'matched_district', 'blocks_exact_match',
+							'district_exact_match', 'approach']]
 
-
-	responses_loc_start.to_excel('matching_names_from_responses_final_24072019.xlsx', index = False)
+	print(responses)
+	#responses.to_excel('matching_names_from_responses_final_25072019.xlsx', index = False)
 
 
 
