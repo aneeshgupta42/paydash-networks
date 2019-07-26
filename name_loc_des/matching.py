@@ -63,7 +63,7 @@ responses['matched_block_baseline'] = responses['matched_uid'].apply(lambda x: u
 responses['matched_block_april'] = responses['matched_uid'].apply(lambda x: uid_block_april[x] if x!='' else '')
 responses['matched_district'] = responses['matched_uid'].apply(lambda x: uid_district[x] if x!='' else '')
 responses['blocks_exact_match'] = 0
-responses.loc[(responses['matched_block_baseline'].apply(lambda x: x.replace('_', ' ')) == responses['block_prediction']) | (responses['matched_block_april'].apply(lambda x: x.replace('_', ' ')) == responses['block_prediction']), 'blocks_exact_match'] = 1
+responses.loc[(responses['matched_block_baseline'].apply(lambda x: str(x).replace('_', ' ')) == responses['block_prediction']) | (responses['matched_block_april'].apply(lambda x: str(x).replace('_', ' ')) == responses['block_prediction']), 'blocks_exact_match'] = 1
 
 responses['district_exact_match'] = 0
 responses.loc[responses['matched_district'] == responses['district_prediction'], 'district_exact_match'] = 1
