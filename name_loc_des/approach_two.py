@@ -9,36 +9,46 @@ import numpy as np
 import math
 from collections import defaultdict
 
+
+def clean_title(x):
+
+	x = x.strip()
+	list = ['\ASushri','\AMr.', '\AMR ','\AMR.','\ASH ', '\AKU ', '\AKu.', '\AKu ', '\AKU.', '\ADR ', '\ADR.', '\ADr.', '\AMISS ', '\AMrs.', '\AMrs ', '\AMRS', '\ASHRI ', ' JI\Z', ' Ji\Z', '\ASUSHRI ', '\ASMT ', '\ASmt ', '\ASMT.','\AMs.', '\AMS.', '\ASir ', 'Sir\Z', 'SIR\Z']
+	for k in list:
+		if(re.search(k,x)):
+			k = k.replace('\A', '')
+			k = k.replace('\Z', '')
+			x = x.replace(k, '')
+	x = x.strip()
+	return x
+
+
 def process_files():
 
 
-	#responses = pd.read_csv('../case_specific_matches_code_separator/output/match_24072019.csv')
 	responses = pd.read_excel('../docs/matching_names_output_24072019.xlsx')
 	print(responses)
-	#responses = responses.loc[responses['approach'] == 0]
+
 	#print(responses)
-	#responses = responses.iloc[:100]
+	responses = responses.iloc[:100]
 	#responses = responses[['Res_uid', 'Name' , 'Designation', 'Location', 'block_prediction', 'district_prediction']]
 	# From Aneesh's code
 	#responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 'Location', 'block_prediction', 'district_prediction', 'approach']]
 	#responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
 	
+	# don't need to clean because comes in clean from Aneesh's code
 	#responses['Name'] = responses['Name'].apply(lambda x: clean_title(str(x)))
 	print(responses)
 
 	registration = pd.read_excel('name_loc_designation_match_edited.xlsx', sheet_name = 0)
 	df_baseline = registration[['Individual_UID', 'block_name_baseline', 'district_name_baseline', 'Name_Baseline']]
-	#df_baseline = df_baseline.iloc[:100]
+
 	df_baseline['Individual_UID'] = df_baseline['Individual_UID'].apply(lambda x: int(x))
-	df_baseline['Name_Baseline'] = df_baseline['Name_Baseline'].fillna('').str.upper()
+	#df_baseline['Name_Baseline'] = df_baseline['Name_Baseline'].fillna('').str.upper()
 	df_baseline = df_baseline.loc[df_baseline['Name_Baseline'] != '']
-#	df_baseline = df_baseline.loc[(df_baseline['Name_Baseline']).notna() & 
-#								  (df_baseline['district_name_baseline']).notna() &
-#								  (df_baseline['block_name_baseline']).notna()]
-#	
-#	df_baseline = df_baseline.loc[pd.notna(df_baseline['Name_Baseline']) & 
-#								  pd.notna(df_baseline['district_name_baseline']) &
-#								  pd.notna(df_baseline['block_name_baseline'])]						
+	
+	# need to clean baseline data as well
+	df_registration['Name_Baseline'] = df_registration['Name_Baseline'].apply(lambda x: clean_title(str(x).upper())).fillna('')					
 
 	print(df_baseline)
 
