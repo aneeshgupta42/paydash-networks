@@ -37,6 +37,16 @@ def process_files():
 	return df_networks, df_blocks
 
 
+def handle_all_cases(df_networks_std):
+	
+	df_networks_std['block_prediction'] = None
+	df_networks_std['block_prediction_score'] = None
+	df_networks_std['district_prediction'] = None
+	df_networks_std['district_prediction_score'] = None
+
+	return df_networks_std
+
+
 def hit_cases(df_networks, df_blocks):
 	
 	#df_networks = df_networks.iloc[:400]
@@ -51,15 +61,18 @@ def hit_cases(df_networks, df_blocks):
 	df_networks_std, df_blocks_std = \
 				exact_matches.process_exact_matches(df_networks, df_blocks)
 
-	df_networks_std = separator_present.make_predictions(df_networks_std)
+	#df_networks_std = separator_present.make_predictions(df_networks_std)
 
-	df_networks_std = \
-				handle_dash.match_with_dash(df_networks_std, df_blocks_std)
+	#df_networks_std = \
+	#			handle_dash.match_with_dash(df_networks_std, df_blocks_std)
 
-	df_networks_std = \
-				handle_no_punc.handle_cases(df_networks_std, df_blocks_std)
-	#print('after all')
-	#print(df_networks_std)
+	#df_networks_std = \
+	#			handle_no_punc.handle_cases(df_networks_std, df_blocks_std)
+	
+	df_networks_std.loc[df_networks_std['Location'].str.contains('ALL|All|all', na=False)] = \
+		handle_all_cases(df_networks_std)
+	print('after all')
+	print(df_networks_std)
 
 	return df_networks_std
 
@@ -74,9 +87,9 @@ def main():
 
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
-	df_networks_final.drop(columns=['Location_std'], inplace=True)
-	print(df_networks_final.head(50))
-	df_networks_final.to_csv('./output/match_24072019.csv', index=False)
+	#df_networks_final.drop(columns=['Location_std'], inplace=True)
+	#print(df_networks_final.head(50))
+	#df_networks_final.to_csv('./output/match_24072019.csv', index=False)
 
 
 if __name__ == '__main__':
