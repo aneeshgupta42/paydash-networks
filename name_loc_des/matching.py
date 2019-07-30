@@ -34,6 +34,8 @@ responses.columns = ['respondent_uid','mp_apo_name','Designation', 'Location', '
 #print(responses.columns)
 
 responses['mp_apo_name'] = responses['mp_apo_name'].apply(lambda x: clean_title(str(x).upper())).fillna('')
+responses['block_prediction'] = responses['block_prediction'].apply(lambda x: str(x)).fillna('')
+responses['district_prediction'] = responses['district_prediction'].apply(lambda x: str(x)).fillna('')
 
 registration = pd.read_excel('../docs/name_loc_designation_match_edited.xlsx', sheet_name = 0)
 df_registration = registration[['Individual_UID','Name_Baseline','district_name_baseline','block_name_baseline','Designation_Baseline','district_name_april','block_name_april','Designation_April']]
@@ -53,7 +55,7 @@ print('\nBegin Matching...\n')
 
 responses['matching'] = responses['mp_apo_name'].progress_apply(lambda x: match(str(x), baseline_names) if ((x!='') & (x!='nan')) else ',')
 responses['predicted_name'] = responses['matching'].apply(lambda x: x.split(',')[0])
-responses['name_score'] = responses['matching'].apply(lambda x: x.split(',')[1])
+responses['name_score'] = responses['matching'].apply(lambda x: int(x.split(',')[1]))
 
 print('Done Matching...')
 print('Adding UIDs...')
@@ -62,19 +64,39 @@ responses['matched_uid'] = responses['predicted_name'].apply(lambda x: name_uid[
 responses['matched_block_baseline'] = responses['matched_uid'].apply(lambda x: uid_block[x] if x!='' else '')
 responses['matched_block_april'] = responses['matched_uid'].apply(lambda x: uid_block_april[x] if x!='' else '')
 responses['matched_district'] = responses['matched_uid'].apply(lambda x: uid_district[x] if x!='' else '')
+
+#first set to 0, then set to 1 where it matches, and then to '' where block prediction was absent
 responses['blocks_exact_match'] = 0
 responses.loc[(responses['matched_block_baseline'].apply(lambda x: str(x).replace('_', ' ')) == responses['block_prediction']) | (responses['matched_block_april'].apply(lambda x: str(x).replace('_', ' ')) == responses['block_prediction']), 'blocks_exact_match'] = 1
+responses.loc[responses['block_prediction'].fillna('') == '', 'blocks_exact_match'] = ''
 
-responses['district_exact_match'] = 0
-responses.loc[responses['matched_district'] == responses['district_prediction'], 'district_exact_match'] = 1
-responses.loc[responses['district_prediction'].fillna('') == '', 'district_exact_match'] = 0
+responses['district_exact_match'] = ''
+responses.loc[(responses['block_prediction'].fillna('') == '') & (responses['matched_district'] == responses['district_prediction']), 'district_exact_match'] = 1
+responses.loc[(responses['block_prediction'].fillna('') == '') & (responses['matched_district'] != responses['district_prediction']), 'district_exact_match'] = 0
+responses.loc[responses['district_prediction'].fillna('') == '', 'district_exact_match'] = ''
 
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'predicted_name'] = ''
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'name_score'] = ''
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'matched_uid'] = ''
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'matched_block_baseline'] = ''
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'matched_block_april'] = ''
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['district_exact_match'] == 0), 'matched_district'] = ''
+responses['name_score'] = responses['name_score'].apply(lambda x: int(x))
+
+responses.loc[(responses['name_score'] < 80), 'predicted_name'] = ''
+responses.loc[(responses['name_score'] < 80), 'matched_uid'] = ''
+responses.loc[(responses['name_score'] < 80), 'matched_block_baseline'] = ''
+responses.loc[(responses['name_score'] < 80), 'matched_block_april'] = ''
+responses.loc[(responses['name_score'] < 80), 'matched_district'] = ''
+
+
+responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'predicted_name'] = ''
+responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
+responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_uid'] = ''
+responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_baseline'] = ''
+responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_april'] = ''
+responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_district'] = ''
+
+responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'predicted_name'] = ''
+responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
+responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_uid'] = ''
+responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_baseline'] = ''
+responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_april'] = ''
+responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_district'] = ''
 
 responses['approach'] = responses['matched_uid'].fillna('').apply(lambda x: 1 if x!='' else 0)
 
