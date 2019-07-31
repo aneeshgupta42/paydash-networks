@@ -7,9 +7,16 @@ from fuzzywuzzy import process
 import re
 import numpy as np
 import math
-from collections import defaultdict
+#from collections import defaultdict
+
+import approach_two_block_pred
+import approach_two_district_pred
+import approach_two_both_pred
 
 
+# clean title only needs to be applied to registration dataframe here in 
+# approach 2 because responses df comes from Aneesh's output of approach 1
+# -- he already ran this same function on the original responses in approach 1
 def clean_title(x):
 
 	x = x.strip()
@@ -23,126 +30,122 @@ def clean_title(x):
 	return x
 
 
+
 def process_files():
 
-
-	responses = pd.read_excel('../docs/matching_names_output_24072019.xlsx')
-	print(responses)
+	responses = pd.read_excel('../docs/matching_names_output_31072019.xlsx')
 
 	#print(responses)
-	responses = responses.iloc[:100]
-	#responses = responses[['Res_uid', 'Name' , 'Designation', 'Location', 'block_prediction', 'district_prediction']]
-	# From Aneesh's code
-	#responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 'Location', 'block_prediction', 'district_prediction', 'approach']]
-	#responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
-	
-	# don't need to clean because comes in clean from Aneesh's code
-	#responses['Name'] = responses['Name'].apply(lambda x: clean_title(str(x)))
+	responses = responses.iloc[15:227]
 	print(responses)
 
-	registration = pd.read_excel('name_loc_designation_match_edited.xlsx', sheet_name = 0)
-	df_baseline = registration[['Individual_UID', 'block_name_baseline', 'district_name_baseline', 'Name_Baseline']]
+	# this is edited in a specific format that is different that how Aneesh 
+	# edited it, which is documented
+	# it also has Sehore district data now at the bottom with
+	# dummy uid's - we don't have those yet 
+	registration = pd.read_excel('name_loc_designation_match_edited.xlsx', 
+								 sheet_name = 0)
+	registration.rename(columns={'block_name_baseline': 'block_name', 
+								 'district_name_baseline': 'district_name',
+								 'Name_Baseline': 'Name', 
+								 'Designation_Baseline': 'Designation'}, 
+								 inplace=True)
+	df_registration = registration[['Individual_UID', 'block_name', 'district_name', 'Name', 'Designation']]
 
-	df_baseline['Individual_UID'] = df_baseline['Individual_UID'].apply(lambda x: int(x))
-	#df_baseline['Name_Baseline'] = df_baseline['Name_Baseline'].fillna('').str.upper()
-	df_baseline = df_baseline.loc[df_baseline['Name_Baseline'] != '']
+	df_registration['Individual_UID'] = df_registration['Individual_UID'].apply(lambda x: int(x))
+	#df_registration['Name'] = df_registration['Name'].fillna('').str.upper()
+	# keep only datapoints with name input
+	df_registration = df_registration.loc[df_registration['Name'] != '']
 	
-	# need to clean baseline data as well
-	df_registration['Name_Baseline'] = df_registration['Name_Baseline'].apply(lambda x: clean_title(str(x).upper())).fillna('')					
+	# clean title only needs to be applied to registration dataframe here in 
+	# approach 2 because responses df comes from Aneesh's output of approach 1
+	# -- he already ran this same function on the original responses in approach 1
+	df_registration['Name'] = df_registration['Name'].apply(lambda x: clean_title(str(x).upper())).fillna('')					
 
-	print(df_baseline)
+	print(df_registration)
 
-	return responses, df_baseline
+	return responses, df_registration
 
 
-def match_loc_start(row, df_baseline):
+def set_empty_match_columns(row):
+	
+	row['matched_name_token_sort'] = ''
+	row['matched_name_confidence'] = ''
+	row['matched_uid'] = ''
+	row['matched_block'] = ''
+	row['matched_district'] = ''
+
+	return row
+
+
+# clean string to 
+def get_initialed_name(name_original):
+	# only if no periods exist - 
+	if '.' not in name_original:
+		name_list = name_original.split()
+		name_final = ' '.join([name[0] for name in name_list[:-1]]) + ' ' + name_list[-1]
+	else:
+		# in cases with period, just replace with space
+		name_final = name_original.replace(".", " ")	
+	
+	return name_final
+
+
+
+def match_row(row, df_registration):
 	#print(row['Name'])
+	# already been covered in approach 1 
+	if row['approach'] == 1:
+		return row
+
 	if row['Name'] == 'NAN':
 		#print('in none')
 		row['matched_name_token_sort'] = None
 		row['matched_name_confidence'] = None
 		return row
+	
+	# for KATNI - which has an extra space
 	if isinstance(row['district_prediction'], str):
 		row['district_prediction'] = row['district_prediction'].strip()
 
-	df_baseline_subset = df_baseline.loc[df_baseline['district_name_baseline'] == row['district_prediction']]
-	if row['Name'] == 'AJEET SINGH':
-		print('AJEET SINGH')
-		print(row)
-		print(df_baseline_subset)
-	#print(row['district_prediction'])
-	#print(df_baseline_subset)
-
-	# grab just initials of row's Name and all df_baseline_subset's name_baselines
-	# only if no periods exist - this is how things are cleaned
-	if '.' not in row['Name']:
-		name_list = row['Name'].split()
-		name_final = ' '.join([name[0] for name in name_list[:-1]]) + ' ' + name_list[-1]
-	else:
-		name_final = row['Name']
-	
-	df_baseline_subset['Name_Baseline_initial'] = \
-		df_baseline_subset['Name_Baseline'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
-
-	#print('df_baseline_subset')
-	#print(df_baseline_subset)
-
-	baseline_names = list(df_baseline_subset['Name_Baseline_initial'].fillna('').unique())
-	#print(baseline_names)
-	
-	if baseline_names:
-		# get other calcs also to see best
-		ratio_calc = list(process.extractOne(name_final, baseline_names, scorer = fuzz.ratio))
-		partial_ratio_calc = list(process.extractOne(name_final, baseline_names, scorer = fuzz.partial_ratio))
-		token_sort_ratio_calc = list(process.extractOne(name_final, baseline_names, scorer = fuzz.token_sort_ratio))
-		token_set_ratio_calc = list(process.extractOne(name_final, baseline_names, scorer = fuzz.token_set_ratio))
-
+	# Just block prediction
+	if isinstance(row['block_prediction'], str) and not isinstance(row['district_prediction'], str):
+		#print('block prediction')
 		#print(row['Name'])
-		#print(name_final)
-		#print(ratio_calc)
-		#print(partial_ratio_calc)
-		#print(token_sort_ratio_calc)
-		#print(token_set_ratio_calc)
+		return approach_two_block_pred.process_pred_on_block(row, df_registration)
 
-		#print(token_sort_ratio_calc[0])
-		#print(df_baseline_subset)
-		#row['matched_name_token_sort'] = token_sort_ratio_calc[0]
-		row['matched_name_token_sort'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline_initial'] == token_sort_ratio_calc[0], 'Name_Baseline']).values[0]
-		row['matched_name_confidence'] = token_sort_ratio_calc[1]
-		# need to add matched uid, block, and district
-		#name_uid = {name:list(df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == name, 'Individual_UID']) for name in list(df_baseline_subset['Name_Baseline'])}
-		row['matched_uid'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
+	# Just district prediction
+	if not isinstance(row['block_prediction'], str) and isinstance(row['district_prediction'], str):
+		#print('district prediction')
 		#print(row['Name'])
-		
-		
-		row['matched_block'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'block_name_baseline']).values[0]
-		#if row['Name'] == 'CHANDAR MANDLOI':
-		#	print('Chandar Singh Man')
-		#	print(df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'block_name_baseline'])
-		#	print(row['matched_block'])
+		return approach_two_district_pred.process_pred_on_district(row, df_registration)
 
-		row['matched_district'] = (df_baseline_subset.loc[df_baseline_subset['Name_Baseline'] == row['matched_name_token_sort'], 'district_name_baseline']).values[0]
-	else:
-		row['matched_name_token_sort'] = ''
-		row['matched_name_confidence'] = ''
-		row['matched_uid'] = ''
-		row['matched_block'] = ''
-		row['matched_district'] = ''
-	
-
+	# Both block and district prediction
+	if isinstance(row['block_prediction'], str) and isinstance(row['district_prediction'], str):
+		print('both prediction')
+		print(row['Name'])
+		return approach_two_both_pred.process_pred_on_both(row, df_registration)
 
 	return row
 
 
 
-def perform_name_matching_loc_start(responses, df_baseline):
-	responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 'Location', 'block_prediction', 'district_prediction', 'approach']]
+def perform_name_matching(responses, df_registration):
+	
+
+	responses = responses[['respondent_uid', 'mp_apo_name' , 'Designation', 
+						   'Location', 'block_prediction', 
+						   'block_prediction_score', 'district_prediction', 
+						   'district_prediction_score', 'matched_designation', 
+						   'approach']]
+	
 	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
 
 	print('Begin matching starting with locations...')
-	# for each row look within the block_prediction block in df_baseline 
-	responses = responses.apply(lambda x: match_loc_start(x, df_baseline), axis=1)
+	 
+	responses = responses.apply(lambda x: match_row(x, df_registration), axis=1)
 	print('Done matching starting with locations...')
+	
 	responses['approach'] = 2
 	
 	responses.loc[responses['matched_name_token_sort'].notna(), 'blocks_exact_match'] = 0
@@ -163,23 +166,27 @@ def perform_name_matching_loc_start(responses, df_baseline):
 def main():
 
 	pd.options.mode.chained_assignment = None
-	responses, df_baseline = process_files()
+	responses, df_registration = process_files()
 
-	responses.loc[responses['approach'] == 0] = perform_name_matching_loc_start(responses, df_baseline)
+	# only set to responses that were not covered with approach 1
+	responses.loc[responses['approach'] == 0] = perform_name_matching(responses, df_registration)
 	
 	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
 	responses.loc[responses['Name'] == 'NAN', 'approach'] = ''
 
 	responses = \
 		responses[['respondent_uid', 'Name', 'Designation', 'Location',
-							'block_prediction', 'district_prediction',
+							'block_prediction', 'block_prediction_score',
+							'district_prediction', 'district_prediction_score',
 							'predicted_name', 'name_score', 'matched_uid',
 							'matched_block_baseline', 'matched_block_april',
 							'matched_district', 'blocks_exact_match',
-							'district_exact_match', 'approach']]
+							'district_exact_match', 'matched_designation', 
+							'approach']]
 
 	print(responses)
-	#responses.to_excel('matching_names_from_responses_final_25072019.xlsx', index = False)
+	print('after')
+	#responses.to_excel('matching_names_from_responses_changed_29072019.xlsx', index = False)
 
 
 
