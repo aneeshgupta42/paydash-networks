@@ -1,5 +1,6 @@
 import pandas as pd
 from fuzzywuzzy import process
+from fuzzywuzzy import fuzz
 import re
 import datetime
 from tqdm import tqdm
@@ -34,7 +35,7 @@ responses.columns = ['respondent_uid','mp_apo_name','Designation', 'Location', '
 #print(responses.columns)
 
 responses['mp_apo_name'] = responses['mp_apo_name'].apply(lambda x: clean_title(str(x).upper())).fillna('')
-responses['block_prediction'] = responses['block_prediction'].apply(lambda x: str(x)).fillna('')
+responses['block_prediction'] = responses['block_prediction'].apply(lambda x: str(x).replace('nan', '')).fillna('')
 responses['district_prediction'] = responses['district_prediction'].apply(lambda x: str(x).replace('nan', '')).fillna('')
 
 registration = pd.read_excel('../docs/name_loc_designation_match_edited.xlsx', sheet_name = 0)
@@ -49,13 +50,14 @@ uid_district = pd.Series(df_registration.district_name_baseline.values,index=df_
 uid_block_april = pd.Series(df_registration.block_name_april.values,index=df_registration.Individual_UID).to_dict()
 
 baseline_blocks = list(df_registration['block_name_baseline'].fillna('').unique())
-baseline_names =  list(df_registration['Name_Baseline'].fillna('').unique())
+baseline_names =  list(df_registration['Name_Baseline'].fillna('').values.tolist())
 
 print('\nBegin Matching...\n')
 
 responses['matching'] = responses['mp_apo_name'].progress_apply(lambda x: match(str(x), baseline_names) if ((x!='') & (x!='nan')) else ',')
 responses['predicted_name'] = responses['matching'].apply(lambda x: x.split(',')[0])
 responses['name_score'] = responses['matching'].apply(lambda x: int(x.split(',')[1]))
+responses['name_score'] = responses['name_score'].apply(lambda x: int(x))
 
 print('Done Matching...')
 print('Adding UIDs...')
@@ -75,7 +77,7 @@ responses.loc[(responses['block_prediction'].fillna('') == '') & (responses['mat
 responses.loc[(responses['block_prediction'].fillna('') == '') & (responses['matched_district'] != responses['district_prediction']), 'district_exact_match'] = 0
 responses.loc[responses['district_prediction'].fillna('') == '', 'district_exact_match'] = ''
 
-responses['name_score'] = responses['name_score'].apply(lambda x: int(x))
+responses.loc[(responses['name_score']==100) & (responses['matched_district'] == responses['district_prediction']), 'district_exact_match'] = 1
 
 responses.loc[(responses['name_score'] < 80), 'predicted_name'] = ''
 responses.loc[(responses['name_score'] < 80), 'matched_uid'] = ''
@@ -84,18 +86,38 @@ responses.loc[(responses['name_score'] < 80), 'matched_block_april'] = ''
 responses.loc[(responses['name_score'] < 80), 'matched_district'] = ''
 
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'predicted_name'] = ''
-#responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_uid'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_baseline'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_april'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_district'] = ''
 
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'predicted_name'] = ''
-#responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_uid'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_baseline'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_april'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_district'] = ''
+
+responses_2 = responses[(responses['name_score']==100) & ((responses['district_exact_match'] == 0) | (responses['district_exact_match'] == ''))]
+
+print(responses)
+print(responses_2)
+print('\nBeginning process for the 100 name_score entries...\n')
+
+for line,row in tqdm(enumerate(responses_2.itertuples(), 1)):
+	k = row.mp_apo_name
+	count = 0
+	print(k)
+	for i in tqdm(baseline_names):
+		if(fuzz.token_set_ratio(k,i) == 100): count+=1
+	print(count)
+	if(count > 1):
+		responses.set_value(row.Index, 'predicted_name', '')
+		responses.set_value(row.Index, 'matched_uid', '')
+		responses.set_value(row.Index, 'matched_block_baseline', '')
+		responses.set_value(row.Index, 'matched_block_april', '')
+		responses.set_value(row.Index, 'matched_district', '')
+
+print('\nDone with the 100 name_score cases...')
 
 responses['approach'] = responses['matched_uid'].fillna('').apply(lambda x: 1 if x!='' else 0)
 
