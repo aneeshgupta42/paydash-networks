@@ -63,8 +63,8 @@ def make_predictions(df):
     df['block_name'] = ''
     df['district_name'] = ''
 
-    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'block_name'] = df['Location'].fillna('').apply(lambda x: splice1(x.upper()).strip())
-    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'district_name'] = df['Location'].fillna('').apply(lambda x: splice2(x.upper()).strip().strip(k))
+    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'block_name'] = df['Location'].fillna('').apply(lambda x: splice1(x.upper()).strip())
+    df.loc[(df['separator_present'] == 1) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'district_name'] = df['Location'].fillna('').apply(lambda x: splice2(x.upper()).strip().strip(k))
 
     ourb = list(df['block_name'].unique())
     ourd = list(df['district_name'].unique())
@@ -87,16 +87,16 @@ def make_predictions(df):
         bdict[k] = temp[1]
         if k == '':
             bdict[k] = ''
-        df.loc[(df['block_name'] == k) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'block_prediction'] = bdict[k]
-        df.loc[(df['block_name'] == k) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'block_prediction_score'] = temp[2]
+        df.loc[(df['block_name'] == k) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'block_prediction'] = bdict[k]
+        df.loc[(df['block_name'] == k) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'block_prediction_score'] = temp[2]
 
     for i in ourd:
         temp = (i,) + process.extractOne(i, dlist)
         ddict[i] = temp[1]
         if i == '':
             ddict[i] = ''
-        df.loc[(df['district_name'] == i) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'district_prediction'] = ddict[i]
-        df.loc[(df['district_name'] == i) & (df['exact_match_blocks'] == 0) & (df['exact_match_full_name'] == 0), 'district_prediction_score'] = temp[2]
+        df.loc[(df['district_name'] == i) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'district_prediction'] = ddict[i]
+        df.loc[(df['district_name'] == i) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'district_prediction_score'] = temp[2]
 
     df = df.drop(columns = ['block_name', 'district_name', 'separator_present'])
     

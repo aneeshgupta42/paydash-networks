@@ -32,8 +32,8 @@ def check_exact_match(df_networks, df_blocks):
 
 
 		elif row['exact_match_blocks'] == 1:
-
-			row['block_prediction'] = row['Location']
+			# take out comma for "SEONI, MALWA"
+			row['block_prediction'] = row['Location'].replace(",", "")
 			row['block_prediction_score'] = 100
 			
 			if row['exact_match_districts'] == 1:
