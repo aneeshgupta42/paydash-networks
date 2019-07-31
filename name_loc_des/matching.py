@@ -29,13 +29,13 @@ tqdm.pandas()
 
 output_date = datetime.datetime.now().strftime("%d%m%Y")
 responses = pd.read_csv('../docs/location_matched_blocks.csv')
-responses = responses[['Res_uid', 'Name', 'Designation', 'Location', 'block_prediction', 'district_prediction']]
-responses.columns = ['respondent_uid','mp_apo_name','Designation', 'Location', 'block_prediction', 'district_prediction']
+responses = responses[['Res_uid', 'Name', 'Designation', 'Location', 'block_prediction', 'block_prediction_score','district_prediction','district_prediction_score']]
+responses.columns = ['respondent_uid','mp_apo_name','Designation', 'Location', 'block_prediction', 'block_prediction_score','district_prediction','district_prediction_score']
 #print(responses.columns)
 
 responses['mp_apo_name'] = responses['mp_apo_name'].apply(lambda x: clean_title(str(x).upper())).fillna('')
 responses['block_prediction'] = responses['block_prediction'].apply(lambda x: str(x)).fillna('')
-responses['district_prediction'] = responses['district_prediction'].apply(lambda x: str(x)).fillna('')
+responses['district_prediction'] = responses['district_prediction'].apply(lambda x: str(x).replace('nan', '')).fillna('')
 
 registration = pd.read_excel('../docs/name_loc_designation_match_edited.xlsx', sheet_name = 0)
 df_registration = registration[['Individual_UID','Name_Baseline','district_name_baseline','block_name_baseline','Designation_Baseline','district_name_april','block_name_april','Designation_April']]
@@ -83,16 +83,15 @@ responses.loc[(responses['name_score'] < 80), 'matched_block_baseline'] = ''
 responses.loc[(responses['name_score'] < 80), 'matched_block_april'] = ''
 responses.loc[(responses['name_score'] < 80), 'matched_district'] = ''
 
-
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'predicted_name'] = ''
-responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
+#responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_uid'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_baseline'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_april'] = ''
 responses.loc[(responses['blocks_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_district'] = ''
 
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'predicted_name'] = ''
-responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
+#responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'name_score'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_uid'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_baseline'] = ''
 responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'] != 100), 'matched_block_april'] = ''
@@ -100,5 +99,19 @@ responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'
 
 responses['approach'] = responses['matched_uid'].fillna('').apply(lambda x: 1 if x!='' else 0)
 
-responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'district_prediction', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid', 'approach']]
+responses['name_absent'] = responses['mp_apo_name'].fillna('').apply(lambda x: 1 if (x=='')|(x=='NAN') else 0)
+responses['name_exact_match'] = responses['name_score'].apply(lambda x: 1 if x==100 else 0)
+responses['name_above_threshold'] = responses['name_score'].apply(lambda x: 1 if (x>80) & (x<100) else 0)
+responses['name_match_and_block_match'] = 0
+responses.loc[(responses['name_score']==100) &(responses['blocks_exact_match']==1), 'name_match_and_block_match'] = 1
+responses['name_good_and_blocks_match'] = 0
+responses.loc[(responses['name_score']>80) &(responses['blocks_exact_match']==1), 'name_good_and_blocks_match'] = 1
+
+print('\nNo. of absent names: {}'.format(responses['name_absent'].sum()))
+print('\nNo. of exact matching names: {}'.format(responses['name_exact_match'].sum()))
+print('\nNo. of exact name matches with block exact matches: {}'.format(responses['name_match_and_block_match'].sum()))
+print('\nNo. of good name matches: {}'.format(responses['name_above_threshold'].sum()))
+print('\nNo. of good name matches and block exact matches: {}'.format(responses['name_good_and_blocks_match'].sum()))
+
+responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'block_prediction_score', 'district_prediction', 'district_prediction_score', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid', 'approach']]
 responses.to_excel('../docs/matching_names_output_' + output_date + '.xlsx', index = False)
