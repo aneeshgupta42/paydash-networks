@@ -10,9 +10,10 @@ import approach_two
 def process_pred_on_block(row, df_registration):
 
 	# get block match subset
-	df_registration_subset_block = df_registration.loc[df_registration['block_name'] == row['block_prediction']]
+	df_registration_subset_block = df_registration.loc[(df_registration['block_name'] == row['block_prediction']) &
+														(df_registration['Designation'] == row['Designation'])]
 	
-	# one word compare to full names, > one word compare to initials
+	# with one word, compare to full names
 	if len(row['Name'].split()) == 1:
 		# set both name_final and name_initial column to the original names
 		name_final = row['Name']
@@ -20,6 +21,7 @@ def process_pred_on_block(row, df_registration):
 		registration_names_list = list(df_registration_subset_block['Name'].fillna('').unique())
 
 	else:
+		# with > one word, compare to initials
 		name_final = approach_two.get_initialed_name(row['Name'])
 
 		df_registration_subset_block['Name_initial'] = \
@@ -28,14 +30,10 @@ def process_pred_on_block(row, df_registration):
 		registration_names_list = list(df_registration_subset_block['Name_initial'].fillna('').unique())
 
 	if registration_names_list:
-		partial_ratio_calc = list(process.extractOne(name_final, registration_names_list, scorer = fuzz.partial_ratio))
-		#print(partial_ratio_calc[0])
+		token_set_ratio_calc = list(process.extractOne(name_final, registration_names_list, scorer = fuzz.token_set_ratio))
 
-		row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name_initial'] == partial_ratio_calc[0], 'Name']).values[0]
-		row['matched_name_confidence'] = partial_ratio_calc[1]
-		row['matched_uid'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
-		row['matched_block'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == row['matched_name_token_sort'], 'block_name']).values[0]
-		row['matched_district'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == row['matched_name_token_sort'], 'district_name']).values[0]
+		row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name_initial'] == token_set_ratio_calc[0], 'Name']).values[0]
+		row = approach_two.set_match_data(row, df_registration_subset_block, token_set_ratio_calc)
 	else:
 		row = approach_two.set_empty_match_columns(row)
 

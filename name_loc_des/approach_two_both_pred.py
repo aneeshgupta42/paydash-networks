@@ -4,7 +4,7 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-import approach_two# import approach_two.get_initialed_name, approach_two.set_empty_match_columns
+import approach_two
 
 
 def check_correct_loc_combination(row):
@@ -23,8 +23,10 @@ def check_correct_loc_combination(row):
 def process_pred_on_both(row, df_registration):
 	print('in process_pred_on_both')
 	# get matching block and district subsets
-	df_registration_subset_block = df_registration.loc[df_registration['block_name'] == row['block_prediction']]
-	df_registration_subset_district = df_registration.loc[df_registration['district_name'] == row['district_prediction']]
+	df_registration_subset_block = df_registration.loc[(df_registration['block_name'] == row['block_prediction']) & 
+													   (df_registration['Designation'] == row['Designation'])]
+	df_registration_subset_district = df_registration.loc[(df_registration['district_name'] == row['district_prediction']) &
+														  (df_registration['Designation'] == row['Designation'])]
 
 	# check if the full block, district input is a correct combination
 	if check_correct_loc_combination(row) == True:

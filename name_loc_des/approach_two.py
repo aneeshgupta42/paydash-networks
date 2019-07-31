@@ -78,9 +78,13 @@ def set_empty_match_columns(row):
 	return row
 
 
-# clean string to 
+# clean string to create a version with initials
+# strings with one word remain the same
+# everything before the last word gets "initialized"
+# for example, "FIRST LAST" -> "F LAST"
+# for example, "FIRST MIDDLE LAST" -> "F M LAST"
 def get_initialed_name(name_original):
-	# only if no periods exist - 
+	# only if no periods exist 
 	if '.' not in name_original:
 		name_list = name_original.split()
 		name_final = ' '.join([name[0] for name in name_list[:-1]]) + ' ' + name_list[-1]
@@ -90,6 +94,16 @@ def get_initialed_name(name_original):
 	
 	return name_final
 
+
+def set_match_data(row, df_registration_subset, fuzzy_calc):
+	
+	row['matched_name_confidence'] = fuzzy_calc[1]
+	row['matched_uid'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
+	row['matched_block'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'block_name']).values[0]
+	row['matched_district'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'district_name']).values[0]
+	row['matched_designation'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'Designation']).values[0]
+	
+	return row
 
 
 def match_row(row, df_registration):
@@ -140,6 +154,10 @@ def perform_name_matching(responses, df_registration):
 						   'approach']]
 	
 	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
+
+	responses.loc[responses['Designation'] == 'Block APO', 'Designation'] = 'PO'
+	responses.loc[responses['Designation'] == 'Block CEO', 'Designation'] = 'CEO'
+
 
 	print('Begin matching starting with locations...')
 	 

@@ -9,7 +9,8 @@ import approach_two #import get_initialed_name, set_empty_match_columns
 
 def process_pred_on_district(row, df_registration):
 	
-	df_registration_subset_district = df_registration.loc[df_registration['district_name'] == row['district_prediction']]
+	df_registration_subset_district = df_registration.loc[(df_registration['district_name'] == row['district_prediction']) &
+														  (df_registration['Designation'] == row['Designation'])]
 	# one word compare to full names, > one word compare to initials
 	if len(row['Name'].split()) == 1:
 		name_final = row['Name']
@@ -24,14 +25,10 @@ def process_pred_on_district(row, df_registration):
 		registration_names_list = list(df_registration_subset_district['Name_initial'].fillna('').unique())
 
 	if registration_names_list:
-		partial_ratio_calc = list(process.extractOne(name_final, registration_names_list, scorer = fuzz.partial_ratio))
-		#print(partial_ratio_calc[0])
+		token_set_ratio_calc = list(process.extractOne(name_final, registration_names_list, scorer = fuzz.token_set_ratio))
 
-		row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name_initial'] == partial_ratio_calc[0], 'Name']).values[0]
-		row['matched_name_confidence'] = partial_ratio_calc[1]
-		row['matched_uid'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
-		row['matched_block'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == row['matched_name_token_sort'], 'block_name']).values[0]
-		row['matched_district'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == row['matched_name_token_sort'], 'district_name']).values[0]
+		row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name_initial'] == token_set_ratio_calc[0], 'Name']).values[0]
+		row = approach_two.set_match_data(row, df_registration_subset_district, token_set_ratio_calc)
 	else:
 		row = approach_two.set_empty_match_columns(row)
 
