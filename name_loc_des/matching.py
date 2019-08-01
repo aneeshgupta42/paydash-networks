@@ -149,13 +149,17 @@ responses['name_match_and_block_match'] = 0
 responses.loc[(responses['name_score']==100) &(responses['blocks_exact_match']==1), 'name_match_and_block_match'] = 1
 responses['name_good_and_blocks_match'] = 0
 responses.loc[(responses['name_score']>80) &(responses['blocks_exact_match']==1), 'name_good_and_blocks_match'] = 1
+# responses['designation_mismatch'] = 0
+# responses.loc[(responses['approach'] == 1) & (responses['matched_designation'].apply(lambda x: str(x).strip()) not in responses['Designation'].apply(lambda x: str(x).strip())), 'designation_mismatch'] = 1
 
 print('\nNo. of absent names: {}'.format(responses['name_absent'].sum()))
 print('\nNo. of exact matching names: {}'.format(responses['name_exact_match'].sum()))
 print('\nNo. of exact name matches with block exact matches: {}'.format(responses['name_match_and_block_match'].sum()))
 print('\nNo. of good name matches: {}'.format(responses['name_above_threshold'].sum()))
 print('\nNo. of good name matches and block exact matches: {}'.format(responses['name_good_and_blocks_match'].sum()))
+# print('\nNo. of designation mismatches: {}'.format(responses['name_good_and_blocks_match'].sum()))
 
+print(responses[responses['matched_designation'].apply(lambda x: str(x).strip()) not in responses['Designation'].apply(lambda x: str(x).strip())])
 #keep only relevant columns
 responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'block_prediction_score', 'district_prediction', 'district_prediction_score', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid','matched_designation','approach']]
 responses.to_excel('../docs/matching_names_output_' + output_date + '.xlsx', index = False)
