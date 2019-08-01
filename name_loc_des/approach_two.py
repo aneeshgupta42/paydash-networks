@@ -36,7 +36,7 @@ def process_files():
 	responses = pd.read_excel('../docs/matching_names_output_31072019.xlsx')
 
 	#print(responses)
-	responses = responses.iloc[15:227]
+	#responses = responses.iloc[15:227]
 	print(responses)
 
 	# this is edited in a specific format that is different that how Aneesh 
@@ -97,6 +97,10 @@ def get_initialed_name(name_original):
 
 def set_match_data(row, df_registration_subset, fuzzy_calc):
 	
+	print('df_registration_subset')
+	print(df_registration_subset)
+	print('row')
+	print(row)
 	row['matched_name_confidence'] = fuzzy_calc[1]
 	row['matched_uid'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
 	row['matched_block'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'block_name']).values[0]
@@ -176,6 +180,9 @@ def perform_name_matching(responses, df_registration):
 							  'matched_name_token_sort': 'predicted_name',
 							  'matched_name_confidence': 'name_score',
 							  'matched_block': 'matched_block_baseline'}, inplace=True)
+
+	responses.loc[responses['Designation'] == 'PO', 'Designation'] = 'Block APO'
+	responses.loc[responses['Designation'] == 'CEO', 'Designation'] = 'Block CEO'
 	print(responses)
 
 	return responses
@@ -204,7 +211,7 @@ def main():
 
 	print(responses)
 	print('after')
-	#responses.to_excel('matching_names_from_responses_changed_29072019.xlsx', index = False)
+	responses.to_excel('matching_names_from_responses_changed_01082019.xlsx', index = False)
 
 
 

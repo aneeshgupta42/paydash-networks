@@ -16,7 +16,7 @@ def process_pred_on_district(row, df_registration):
 		registration_names_list = list(df_registration_subset_district['Name'].fillna('').unique())
 		if registration_names_list:
 			token_set_ratio_calc = list(process.extractOne(row['Name'], registration_names_list, scorer = fuzz.token_set_ratio))
-			row['matched_name_token_sort'] = list(process.extractOne(row['Name'], registration_names_list, scorer = fuzz.token_set_ratio))
+			row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
 			row = approach_two.set_match_data(row, df_registration_subset_district, token_set_ratio_calc)
 		else:
 			row = approach_two.set_empty_match_columns(row)

@@ -150,6 +150,12 @@ def process_pred_on_both(row, df_registration):
 			registration_names_list_district = list(df_registration_subset_district['Name'].fillna('').unique())
 			registration_names_list_block = list(df_registration_subset_block['Name'].fillna('').unique())
 
+			# TODO: NEED TO CHECK DISTRICT AND BLOCK AT SAME TIME
+			# THIS WILL LEAVE AND SET TO EMPTY IF ONLY DISTRICT MATCHING EXISTS,
+			# HOWEVER THERE IS ALSO THE POSSIBILITY THAT JUST BLOCK MATCHES, 
+			# SO IT WON'T CAPTURE THAT MATCH
+			# TO CHANGE: CAN JUST REMOVE THIS IF AND ADD IF REGISTRATION_NAMES_LIST_DISTRICT
+			# AT SAME LEVEL OF registration_names_list_block AND THEN SET TO SAME [" ", 0] IF NOT
 			if registration_names_list_district:
 				
 				token_set_ratio_calc_district = list(process.extractOne(row['Name'], registration_names_list_district, scorer = fuzz.token_set_ratio))				
@@ -190,12 +196,22 @@ def process_pred_on_both(row, df_registration):
 			registration_names_list_block_init = list(df_registration_subset_block['Name_initial'].fillna('').unique())
 			registration_names_list_block_full = list(df_registration_subset_block['Name'].fillna('').unique())
 
-			# I think only need to check one of them?
+			# TODO: NEED TO CHECK DISTRICT AND BLOCK AT SAME TIME
+			# THIS WILL LEAVE AND SET TO EMPTY IF ONLY DISTRICT MATCHING EXISTS,
+			# HOWEVER THERE IS ALSO THE POSSIBILITY THAT JUST BLOCK MATCHES, 
+			# SO IT WON'T CAPTURE THAT MATCH
+			# TO CHANGE: CAN JUST REMOVE THIS IF AND ADD IF REGISTRATION_NAMES_LIST_DISTRICT
+			# AT SAME LEVEL OF registration_names_list_block AND THEN SET TO SAME [" ", 0] IF NOT
 			if registration_names_list_district_init:
 				token_set_ratio_calc_district_init = list(process.extractOne(name_final, registration_names_list_district_init, scorer = fuzz.token_set_ratio))
 				token_set_ratio_calc_district_full = list(process.extractOne(row['Name'], registration_names_list_district_full, scorer = fuzz.token_set_ratio))
-				token_set_ratio_calc_block_init = list(process.extractOne(name_final, registration_names_list_block_init, scorer = fuzz.token_set_ratio))
-				token_set_ratio_calc_block_full = list(process.extractOne(row['Name'], registration_names_list_block_full, scorer = fuzz.token_set_ratio))
+				
+				if registration_names_list_block_init:
+					token_set_ratio_calc_block_init = list(process.extractOne(name_final, registration_names_list_block_init, scorer = fuzz.token_set_ratio))
+					token_set_ratio_calc_block_full = list(process.extractOne(row['Name'], registration_names_list_block_full, scorer = fuzz.token_set_ratio))
+				else:
+					token_set_ratio_calc_block_init = ['', 0]
+					token_set_ratio_calc_block_full = ['', 0]
 
 				# just need to get max of all these
 				if token_set_ratio_calc_district_init[1] == max(token_set_ratio_calc_district_init[1], token_set_ratio_calc_district_full[1], token_set_ratio_calc_block_init[1], token_set_ratio_calc_block_full[1]):
