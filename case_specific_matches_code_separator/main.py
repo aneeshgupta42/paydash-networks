@@ -3,7 +3,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import numpy as np
 import math
-
+import datetime
 from helpers import exact_matches
 from helpers import separator_present
 from helpers import handle_dash
@@ -38,7 +38,7 @@ def process_files():
 
 
 def hit_cases(df_networks, df_blocks):
-	
+
 	#df_networks = df_networks.iloc[:400]
 
 	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 'Location']]
@@ -67,6 +67,7 @@ def hit_cases(df_networks, df_blocks):
 
 def main():
 
+	output_date = datetime.datetime.now().strftime("%d%m%Y")
 	pd.options.mode.chained_assignment = None  # default='warn'
 
 	df_networks, df_blocks = process_files()
@@ -75,7 +76,7 @@ def main():
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
 	#print(df_networks_final.head(50))
-	df_networks_final.to_csv('match_19072019.csv', index=False)
+	df_networks_final.to_csv('../docs/location_matched_blocks.csv', index=False)
 
 
 if __name__ == '__main__':
