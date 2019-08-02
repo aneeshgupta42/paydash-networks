@@ -36,7 +36,7 @@ def process_files():
 	responses = pd.read_excel('../docs/matching_names_output_31072019.xlsx')
 
 	#print(responses)
-	#responses = responses.iloc[15:227]
+	#responses = responses.iloc[1000:2000]
 	print(responses)
 
 	# this is edited in a specific format that is different that how Aneesh 
@@ -64,6 +64,9 @@ def process_files():
 
 	print(df_registration)
 
+
+	#print(responses.loc[responses['Designation'].isna(), 'Designation'])
+#	print(responses['Designation'].loc[(responses['Designation'] != "Block APO") & (responses['Designation'] != "Block CEO")])
 	return responses, df_registration
 
 
@@ -205,7 +208,8 @@ def main():
 							'district_exact_match', 'matched_designation', 
 							'approach']]
 
-	print(responses)
+	#print(responses.loc[responses['Designation'].isnull() | responses['Designation'] == ''])
+	print(responses.loc[responses['Designation'].isna()])
 	print('after')
 	#responses.to_excel('matching_names_from_responses_changed_01082019.xlsx', index = False)
 

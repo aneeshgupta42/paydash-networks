@@ -13,6 +13,7 @@ def check_correct_loc_combination(row):
 	df_mp_blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
 
 	# check if block, district combination is empty 
+	# need to strip because it wasn't covering that extra space in KATNI
 	df_mp_blocks = df_mp_blocks.loc[(df_mp_blocks['block_name'].str.strip() == row['block_prediction'].strip()) &
 									(df_mp_blocks['district_name'].str.strip() == row['district_prediction'].strip())]
 	if df_mp_blocks.empty:
@@ -133,10 +134,14 @@ def handle_block_district_correct_multi_word(row, df_registration_subset_block, 
 def process_pred_on_both(row, df_registration):
 	print('in process_pred_on_both')
 	# get matching block and district subsets
-	df_registration_subset_block = df_registration.loc[(df_registration['block_name'] == row['block_prediction']) & 
-													   (df_registration['Designation'] == row['Designation'])]
-	df_registration_subset_district = df_registration.loc[(df_registration['district_name'] == row['district_prediction']) &
-														  (df_registration['Designation'] == row['Designation'])]
+	df_registration_subset_block = df_registration.loc[(df_registration['block_name'] == row['block_prediction'])]
+
+	df_registration_subset_district = df_registration.loc[(df_registration['district_name'] == row['district_prediction'])]
+	
+	# Grab a further subset by designation if it exists in row
+	if isinstance(row['Designation'], str):
+		df_registration_subset_block = df_registration_subset_block.loc[(df_registration_subset_block['Designation'] == row['Designation'])]
+		df_registration_subset_district = df_registration_subset_district.loc[(df_registration_subset_district['Designation'] == row['Designation'])]
 
 	# check if the full block, district input is a correct combination
 	if check_correct_loc_combination(row) == True:
