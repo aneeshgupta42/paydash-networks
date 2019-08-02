@@ -13,8 +13,8 @@ def check_correct_loc_combination(row):
 	df_mp_blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
 
 	# check if block, district combination is empty 
-	df_mp_blocks = df_mp_blocks.loc[(df_mp_blocks['block_name'] == row['block_prediction']) &
-									(df_mp_blocks['district_name'] == row['district_prediction'])]
+	df_mp_blocks = df_mp_blocks.loc[(df_mp_blocks['block_name'].str.strip() == row['block_prediction'].strip()) &
+									(df_mp_blocks['district_name'].str.strip() == row['district_prediction'].strip())]
 	if df_mp_blocks.empty:
 		return False
 
@@ -92,10 +92,6 @@ def get_token_set_ratio_calc(row, df_registration_subset):
 
 def handle_block_district_correct_multi_word(row, df_registration_subset_block, df_registration_subset_district):
 	
-	# get initialized names of blocks
-#	df_registration_subset_block['Name_initial'] = \
-#		df_registration_subset_block['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
-	
 	token_set_ratio_calc, df_registration_subset_block, init_larger = get_token_set_ratio_calc(row, df_registration_subset_block)
 	
 	# registration_names_list is empty on block names
@@ -116,9 +112,7 @@ def handle_block_district_correct_multi_word(row, df_registration_subset_block, 
 	else:
 		# block match is below cutoff, so match on districts -> get larger of initialized and original full names
 		print('below cutoff of 50')
-#		df_registration_subset_district['Name_initial'] = \
-#			df_registration_subset_district['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
-			
+
 		token_set_ratio_calc, df_registration_subset_district, init_larger = get_token_set_ratio_calc(row, df_registration_subset_district)
 		# registration_names_list is empty on district names
 		if not token_set_ratio_calc:
@@ -192,6 +186,8 @@ def process_pred_on_both(row, df_registration):
 					# match on block prediction has higher score
 					row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == token_set_ratio_calc_block[0], 'Name']).values[0]
 					row = approach_two.set_match_data(row, df_registration_subset_block, token_set_ratio_calc_block)
+				print(row)
+				#print()
 		
 			else:
 				row = approach_two.set_empty_match_columns(row)
@@ -244,5 +240,5 @@ def process_pred_on_both(row, df_registration):
 			else:
 				row = approach_two.set_empty_match_columns(row)
 
-	print(row)
+#	print(row)
 	return row
