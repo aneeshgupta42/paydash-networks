@@ -20,7 +20,17 @@ def standardize_string(s):
 def check_exact_match(df_networks, df_blocks):
 
 	def set_predictions(row, df_blocks):
+<<<<<<< HEAD:case_specific_matches_code_separator/helpers/exact_matches.py
 		
+=======
+		if row['exact_match_blocks'] == 1:
+			row['block_prediction'] = row['Location']
+			row['block_prediction_score'] = 100
+			row['district_prediction'] = \
+				(df_blocks.loc[df_blocks['block_name'] == row['Location_std'], 'district_name']).values[0]
+			row['district_prediction_score'] = 100
+
+>>>>>>> 644a6610c7e06b83a3daafab7ce3f32a7814ae55:archive/case_specific_matches_code_separator/helpers/exact_matches.py
 		if row['exact_match_full_name'] == 1:
 			row['block_prediction'] = \
 				(df_blocks.loc[df_blocks['full_name_std'] == row['Location_std'], 'block_name']).values[0]
@@ -73,7 +83,7 @@ def check_exact_match(df_networks, df_blocks):
 
 # look if exact match to block_name, and also full_name
 def process_exact_matches(df_networks, df_blocks):
-	
+
 	# first remove all punctuation, extra whitespace, and set to uppercase
 	df_networks['Location_std'] = \
 		df_networks['Location'].apply(standardize_string)
@@ -85,6 +95,7 @@ def process_exact_matches(df_networks, df_blocks):
 		df_blocks['full_name'].apply(standardize_string)
 
 	df_networks = check_exact_match(df_networks, df_blocks)
+<<<<<<< HEAD:case_specific_matches_code_separator/helpers/exact_matches.py
 	
 	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 
 							   'Location', 'Location_std', 
@@ -93,6 +104,15 @@ def process_exact_matches(df_networks, df_blocks):
 							   'district_prediction_score', 
 							   'exact_match_blocks', 'exact_match_districts',
 							   'exact_match_full_name']]
+=======
+
+	df_networks = df_networks[['Res_uid', 'Name', 'Designation',
+							   'Location', 'Location_std',
+							   'block_prediction', 'block_prediction_score',
+							   'district_prediction',
+							   'district_prediction_score',
+							   'exact_match_blocks', 'exact_match_full_name']]
+>>>>>>> 644a6610c7e06b83a3daafab7ce3f32a7814ae55:archive/case_specific_matches_code_separator/helpers/exact_matches.py
 
 	print(df_networks)
 	print(df_blocks)

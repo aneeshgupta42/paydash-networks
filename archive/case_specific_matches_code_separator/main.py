@@ -3,7 +3,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import numpy as np
 import math
-
+import datetime
 from helpers import exact_matches
 from helpers import separator_present
 from helpers import handle_dash
@@ -55,8 +55,13 @@ def handle_all_cases(row):
 
 
 def hit_cases(df_networks, df_blocks):
+<<<<<<< HEAD:case_specific_matches_code_separator/main.py
 	
 	#df_networks = df_networks.iloc[:5]
+=======
+
+	#df_networks = df_networks.iloc[:400]
+>>>>>>> 644a6610c7e06b83a3daafab7ce3f32a7814ae55:archive/case_specific_matches_code_separator/main.py
 
 	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 'Location']]
 
@@ -88,6 +93,7 @@ def hit_cases(df_networks, df_blocks):
 
 def main():
 
+	output_date = datetime.datetime.now().strftime("%d%m%Y")
 	pd.options.mode.chained_assignment = None  # default='warn'
 
 	df_networks, df_blocks = process_files()
@@ -96,8 +102,13 @@ def main():
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
+<<<<<<< HEAD:case_specific_matches_code_separator/main.py
 	print(df_networks_final.head(50))
 	df_networks_final.to_csv('./output/match_31072019.csv', index=False)
+=======
+	#print(df_networks_final.head(50))
+	df_networks_final.to_csv('../docs/location_matched_blocks.csv', index=False)
+>>>>>>> 644a6610c7e06b83a3daafab7ce3f32a7814ae55:archive/case_specific_matches_code_separator/main.py
 
 
 if __name__ == '__main__':
