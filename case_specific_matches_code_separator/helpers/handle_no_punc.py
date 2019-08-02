@@ -67,6 +67,7 @@ def handle_one_word(row, df_blocks_std):
 		row['district_prediction'] = final_district_pred
 		row['district_prediction_score'] = final_district_pred_score
 	else:
+		# if name scores match - for block/district same names
 		row['block_prediction'] = final_block_pred
 		row['block_prediction_score'] = final_block_pred_score
 		row['district_prediction'] = final_district_pred
