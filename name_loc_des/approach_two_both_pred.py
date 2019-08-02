@@ -6,7 +6,8 @@ from fuzzywuzzy import process
 
 import approach_two
 
-
+# this checks the block, district prediction combination
+# in the current mp_blocks doc
 def check_correct_loc_combination(row):
 
 	df_mp_blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
@@ -18,6 +19,121 @@ def check_correct_loc_combination(row):
 		return False
 
 	return True									
+
+
+def handle_block_district_correct_one_word(row, df_registration_subset_block, df_registration_subset_district):
+	print('len == 1')
+	# to compare with original full names on blocks
+	registration_names_list = list(df_registration_subset_block['Name'].fillna('').unique())
+	if registration_names_list:
+		# get calc on original name and block original full names
+		token_set_ratio_calc = list(process.extractOne(row['Name'], registration_names_list, scorer = fuzz.token_set_ratio))
+
+		# CUTOFF FOR GOING TO DISTRICT MATCH
+		cutoff = 75
+		if token_set_ratio_calc[1] >= cutoff:
+			print('above cutoff of 75')
+			# score passes - set matched name on original full name with block match
+			row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
+			row = approach_two.set_match_data(row, df_registration_subset_block, token_set_ratio_calc)
+					
+		else:
+			# below block cutoff - check district match
+			print('below cutoff of 75')
+			# to compare with original full names on districts
+			registration_names_list = list(df_registration_subset_district['Name'].fillna('').unique())
+			if registration_names_list:
+				# get calc on original name and district original full names
+				token_set_ratio_calc = list(process.extractOne(row['Name'], registration_names_list, scorer = fuzz.token_set_ratio))
+
+				# set matched name on original full name with district match
+				row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
+				row = approach_two.set_match_data(row, df_registration_subset_district, token_set_ratio_calc)
+						
+			else:
+				# registration_names_list is empty on district names
+				row = approach_two.set_empty_match_columns(row)
+	else:
+		# registration_names_list is empty on block names
+		row = approach_two.set_empty_match_columns(row)
+
+	return row
+
+
+def get_token_set_ratio_calc(row, df_registration_subset):
+	name_final = approach_two.get_initialed_name(row['Name'])
+#	# get initialized names of blocks
+	df_registration_subset['Name_initial'] = \
+		df_registration_subset['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
+
+	# to compare on initials and original full names
+	registration_names_list_init = list(df_registration_subset['Name_initial'].fillna('').unique())
+	registration_names_list_full = list(df_registration_subset['Name'].fillna('').unique())
+
+	if registration_names_list_init:
+		token_set_ratio_calc_init = list(process.extractOne(name_final, registration_names_list_init, scorer = fuzz.token_set_ratio))
+		token_set_ratio_calc_full = list(process.extractOne(row['Name'], registration_names_list_full, scorer = fuzz.token_set_ratio))
+				
+		# bool variable to decide on if initial or original full name is better
+		init_larger = 0
+		if token_set_ratio_calc_init[1] >= token_set_ratio_calc_full[1]:
+			token_set_ratio_calc = token_set_ratio_calc_init
+			init_larger = 1
+		else: 
+			token_set_ratio_calc = token_set_ratio_calc_full
+
+	else:
+		token_set_ratio_calc = None
+		init_larger = 0
+
+	return token_set_ratio_calc, df_registration_subset, init_larger
+
+
+
+def handle_block_district_correct_multi_word(row, df_registration_subset_block, df_registration_subset_district):
+	
+	# get initialized names of blocks
+#	df_registration_subset_block['Name_initial'] = \
+#		df_registration_subset_block['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
+	
+	token_set_ratio_calc, df_registration_subset_block, init_larger = get_token_set_ratio_calc(row, df_registration_subset_block)
+	
+	# registration_names_list is empty on block names
+	if not token_set_ratio_calc:
+		row = approach_two.set_empty_match_columns(row)
+		return row
+
+	# CUTOFF FOR GOING TO DISTRICT MATCH
+	cutoff = 50
+	if token_set_ratio_calc[1] >= cutoff:
+		print('above cutoff of 50')
+		if init_larger == 1:
+			row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name_initial'] == token_set_ratio_calc[0], 'Name']).values[0]
+		else: 
+			row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
+		row = approach_two.set_match_data(row, df_registration_subset_block, token_set_ratio_calc)
+					
+	else:
+		# block match is below cutoff, so match on districts -> get larger of initialized and original full names
+		print('below cutoff of 50')
+#		df_registration_subset_district['Name_initial'] = \
+#			df_registration_subset_district['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
+			
+		token_set_ratio_calc, df_registration_subset_district, init_larger = get_token_set_ratio_calc(row, df_registration_subset_district)
+		# registration_names_list is empty on district names
+		if not token_set_ratio_calc:
+			row = approach_two.set_empty_match_columns(row)
+			return row
+
+		if init_larger == 1:
+			row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name_initial'] == token_set_ratio_calc[0], 'Name']).values[0]
+		else: 
+			row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
+		
+		row = approach_two.set_match_data(row, df_registration_subset_district, token_set_ratio_calc)
+
+	return row
+
 
 
 def process_pred_on_both(row, df_registration):
@@ -33,113 +149,12 @@ def process_pred_on_both(row, df_registration):
 		print('check_correct_loc_combination True')
 		# match on block full name
 		if len(row['Name'].split()) == 1:
-			print('len == 1')
-			# to compare with original full names on blocks
-			registration_names_list = list(df_registration_subset_block['Name'].fillna('').unique())
-			if registration_names_list:
-				# get calc on original name and block original full names
-				token_set_ratio_calc = list(process.extractOne(row['Name'], registration_names_list, scorer = fuzz.token_set_ratio))
-
-				# CUTOFF FOR GOING TO DISTRICT MATCH
-				cutoff = 75
-				if token_set_ratio_calc[1] >= cutoff:
-					print('above cutoff of 75')
-					# score passes - set matched name on original full name with block match
-					row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
-					row = approach_two.set_match_data(row, df_registration_subset_block, token_set_ratio_calc)
-					
-				else:
-					# below block cutoff - check district match
-					print('below cutoff of 75')
-					# to compare with original full names on districts
-					registration_names_list = list(df_registration_subset_district['Name'].fillna('').unique())
-					if registration_names_list:
-						# get calc on original name and district original full names
-						token_set_ratio_calc = list(process.extractOne(row['Name'], registration_names_list, scorer = fuzz.token_set_ratio))
-						# SET CUTOFF FOR LOW SCORE OF DISTRICT MATCH HERE - SHOULD THEN LEAVE ALL BLANK
-						# AND CALL approach_two.set_empty_match_columns
-						# "if token_set_ratio_calc[1] <= new cutoff" is what the line would be
-
-						# score passes - set matched name on original full name with district match
-						row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
-						row = approach_two.set_match_data(row, df_registration_subset_district, token_set_ratio_calc)
-						
-					else:
-						# registration_names_list is empty on district names
-						row = approach_two.set_empty_match_columns(row)
-			else:
-				# registration_names_list is empty on block names
-				row = approach_two.set_empty_match_columns(row)
+			row = handle_block_district_correct_one_word(row, df_registration_subset_block, df_registration_subset_district)
 
 		else:
 			print('len > 1')
 			# match on block initials - len > one word
-			name_final = approach_two.get_initialed_name(row['Name'])
-
-			# get initialized names of blocks
-			df_registration_subset_block['Name_initial'] = \
-				df_registration_subset_block['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
-
-			# to compare on initials and original full names
-			registration_names_list_init = list(df_registration_subset_block['Name_initial'].fillna('').unique())
-			registration_names_list_full = list(df_registration_subset_block['Name'].fillna('').unique())
-
-			if registration_names_list_init:
-				token_set_ratio_calc_init = list(process.extractOne(name_final, registration_names_list_init, scorer = fuzz.token_set_ratio))
-				token_set_ratio_calc_full = list(process.extractOne(row['Name'], registration_names_list_full, scorer = fuzz.token_set_ratio))
-				
-				# bool variable to decide on if initial or original full name is better
-				init_larger = 0
-				if token_set_ratio_calc_init[1] >= token_set_ratio_calc_full[1]:
-					token_set_ratio_calc = token_set_ratio_calc_init
-					init_larger = 1
-				else: 
-					token_set_ratio_calc = token_set_ratio_calc_full
-				# CUTOFF FOR GOING TO DISTRICT MATCH
-				cutoff = 50
-				if token_set_ratio_calc[1] >= cutoff:
-					print('above cutoff of 50')
-					if init_larger == 1:
-						row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name_initial'] == token_set_ratio_calc[0], 'Name']).values[0]
-					else: 
-						row['matched_name_token_sort'] = (df_registration_subset_block.loc[df_registration_subset_block['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
-					row = approach_two.set_match_data(row, df_registration_subset_block, token_set_ratio_calc)
-					
-				else:
-					# block match is below cutoff, so match on districts -> get larger of initialized and original full names
-					print('below cutoff of 50')
-					df_registration_subset_district['Name_initial'] = \
-						df_registration_subset_district['Name'].apply(lambda x: ' '.join([name[0] for name in x.split()[:-1]]) + ' ' + x.split()[-1] if '.' not in x else x)
-					# below block cutoff - check district match on both initialized and original full names
-					registration_names_list_init = list(df_registration_subset_district['Name_initial'].fillna('').unique())
-					registration_names_list_full = list(df_registration_subset_district['Name'].fillna('').unique())
-
-					if registration_names_list_init:
-						token_set_ratio_calc_init = list(process.extractOne(name_final, registration_names_list_init, scorer = fuzz.token_set_ratio))
-						token_set_ratio_calc_full = list(process.extractOne(row['Name'], registration_names_list_full, scorer = fuzz.token_set_ratio))
-						# SET CUTOFF FOR LOW SCORE OF DISTRICT MATCH HERE - SHOULD THEN LEAVE ALL BLANK
-						# AND CALL approach_two.set_empty_match_columns
-						# if token_set_ratio_calc[1] <= new cutoff is what the line would be
-
-						# bool variable to decide on if initial or original full name is better
-						init_larger = 0
-						if token_set_ratio_calc_init[1] >= token_set_ratio_calc_full[1]:
-							token_set_ratio_calc = token_set_ratio_calc_init
-							init_larger = 1
-						else: 
-							token_set_ratio_calc = token_set_ratio_calc_full
-
-						if init_larger == 1:
-							row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name_initial'] == token_set_ratio_calc[0], 'Name']).values[0]
-						else: 
-							row['matched_name_token_sort'] = (df_registration_subset_district.loc[df_registration_subset_district['Name'] == token_set_ratio_calc[0], 'Name']).values[0]
-						row = approach_two.set_match_data(row, df_registration_subset_district, token_set_ratio_calc)
-					else:
-						# registration_names_list is empty on district names
-						row = approach_two.set_empty_match_columns(row)
-			else:
-				# registration_names_list is empty on block names
-				row = approach_two.set_empty_match_columns(row)
+			row = handle_block_district_correct_multi_word(row, df_registration_subset_block, df_registration_subset_district)
 	else:
 		# block, district combination incorrect
 		# compare matches on block and on district and take higher of the two

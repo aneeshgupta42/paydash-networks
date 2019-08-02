@@ -97,10 +97,6 @@ def get_initialed_name(name_original):
 
 def set_match_data(row, df_registration_subset, fuzzy_calc):
 	
-	print('df_registration_subset')
-	print(df_registration_subset)
-	print('row')
-	print(row)
 	row['matched_name_confidence'] = fuzzy_calc[1]
 	row['matched_uid'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'Individual_UID']).values[0]
 	row['matched_block'] = (df_registration_subset.loc[df_registration_subset['Name'] == row['matched_name_token_sort'], 'block_name']).values[0]
@@ -211,7 +207,7 @@ def main():
 
 	print(responses)
 	print('after')
-	responses.to_excel('matching_names_from_responses_changed_01082019.xlsx', index = False)
+	#responses.to_excel('matching_names_from_responses_changed_01082019.xlsx', index = False)
 
 
 
