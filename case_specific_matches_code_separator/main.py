@@ -56,7 +56,7 @@ def handle_all_cases(row):
 
 def hit_cases(df_networks, df_blocks):
 <<<<<<< HEAD:case_specific_matches_code_separator/main.py
-	
+
 	#df_networks = df_networks.iloc[:5]
 =======
 
@@ -80,10 +80,10 @@ def hit_cases(df_networks, df_blocks):
 
 	df_networks_std = \
 				handle_no_punc.handle_cases(df_networks_std, df_blocks_std)
-	
+
 
 	df_networks_std = df_networks_std.apply(lambda x: handle_all_cases(x), axis=1)
-		
+
 	print('after all')
 	print(df_networks_std)
 
@@ -102,13 +102,9 @@ def main():
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
-<<<<<<< HEAD:case_specific_matches_code_separator/main.py
+	
 	print(df_networks_final.head(50))
 	df_networks_final.to_csv('./output/match_31072019.csv', index=False)
-=======
-	#print(df_networks_final.head(50))
-	df_networks_final.to_csv('../docs/location_matched_blocks.csv', index=False)
->>>>>>> 644a6610c7e06b83a3daafab7ce3f32a7814ae55:archive/case_specific_matches_code_separator/main.py
 
 
 if __name__ == '__main__':
