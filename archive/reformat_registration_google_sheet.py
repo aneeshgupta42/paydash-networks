@@ -176,7 +176,7 @@ def main():
 	print('DISTRICTS MERGED')
 	print(districts_merged)
 
-	with pd.ExcelWriter('name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
+	with pd.ExcelWriter('../docs/name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
 		blocks_merged.to_excel(writer, sheet_name='Block_Officials', index=False)
 		districts_merged.to_excel(writer, sheet_name='District_Officials', index=False)
 

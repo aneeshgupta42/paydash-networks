@@ -36,7 +36,7 @@ def match_with_dash(df_networks_std, df_blocks_std):
 		if row['block_prediction'] or row['district_prediction']:
 			return row
 
-		if row['exact_match_blocks'] == 1 or row['exact_match_full_name'] == 1:
+		if row['exact_match_blocks'] == 1 or row['exact_match_districts'] == 1 or row['exact_match_full_name'] == 1:
 			return row
 
 		if "," in row['Location'] or ")" in row['Location']:

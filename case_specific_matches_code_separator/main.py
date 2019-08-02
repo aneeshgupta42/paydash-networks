@@ -37,9 +37,26 @@ def process_files():
 	return df_networks, df_blocks
 
 
+def handle_all_cases(row):
+
+	if not isinstance(row['Location'], str) or not row['Location']:
+		return row
+
+	all_list = ['ALL', 'All', 'all']
+	if not any(x in row['Location'] for x in all_list):
+		return row
+
+	row['block_prediction'] = None
+	row['block_prediction_score'] = None
+	row['district_prediction'] = None
+	row['district_prediction_score'] = None
+
+	return row
+
+
 def hit_cases(df_networks, df_blocks):
 	
-	#df_networks = df_networks.iloc[:400]
+	#df_networks = df_networks.iloc[:5]
 
 	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 'Location']]
 
@@ -58,6 +75,10 @@ def hit_cases(df_networks, df_blocks):
 
 	df_networks_std = \
 				handle_no_punc.handle_cases(df_networks_std, df_blocks_std)
+	
+
+	df_networks_std = df_networks_std.apply(lambda x: handle_all_cases(x), axis=1)
+		
 	print('after all')
 	print(df_networks_std)
 
@@ -70,12 +91,13 @@ def main():
 	pd.options.mode.chained_assignment = None  # default='warn'
 
 	df_networks, df_blocks = process_files()
+	print(df_blocks.head(100))
 
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
-	#print(df_networks_final.head(50))
-	df_networks_final.to_csv('match_19072019.csv', index=False)
+	print(df_networks_final.head(50))
+	df_networks_final.to_csv('./output/match_31072019.csv', index=False)
 
 
 if __name__ == '__main__':
