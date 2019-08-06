@@ -4,6 +4,8 @@ from fuzzywuzzy import fuzz
 import re
 import datetime
 from tqdm import tqdm
+
+
 #does not cover additional charge yet
 #function for cleaning away titles, that maybe inconsitent across different sources
 def clean_title(x):
@@ -19,6 +21,7 @@ def clean_title(x):
 	return x
 
 def match(x, list):
+
     temp = (x,) + process.extractOne(x, list)
     ret = temp[1]
     if x == '':
@@ -90,7 +93,7 @@ responses.loc[responses['district_prediction'].fillna('') == '', 'district_exact
 #special check for cases where there is an exactly matching name present
 responses.loc[(responses['name_score']==100) & (responses['matched_district'] == responses['district_prediction']), 'district_exact_match'] = 1
 
-#discard bad name matches -- their matching will be attemptes through approach 2
+#discard bad name matches -- their matching will be attempted through approach 2
 responses.loc[(responses['name_score'] < 80), 'predicted_name'] = ''
 responses.loc[(responses['name_score'] < 80), 'matched_uid'] = ''
 responses.loc[(responses['name_score'] < 80), 'matched_block_baseline'] = ''
@@ -117,17 +120,16 @@ responses.loc[(responses['district_exact_match'] == 0) & (responses['name_score'
 
 #for perfect name matches, we need to check for duplicate names, as well as district matches
 responses_2 = responses[(responses['name_score']==100) & ((responses['district_exact_match'] == 0) | (responses['district_exact_match'] == ''))]
-print(responses_2)
 print('\nBeginning process for the 100 name_score entries...\n')
 
 #if same name exists twice, leave perfect name matches to it alone, and cover in approach 2
 for line,row in tqdm(enumerate(responses_2.itertuples(), 1)):
 	k = row.mp_apo_name
 	count = 0
-	print(k)
+	#print(k)
 	for i in baseline_names:
 		if(fuzz.token_set_ratio(k,i) == 100): count+=1
-	print(count)
+	#print(count)
 	if(count > 1):
 		responses.set_value(row.Index, 'predicted_name', '')
 		responses.set_value(row.Index, 'matched_uid', '')
@@ -141,6 +143,15 @@ print('\nDone with the 100 name_score cases...')
 
 responses['approach'] = responses['matched_uid'].fillna('').apply(lambda x: 1 if x!='' else 0)
 
+#discard where no location given - discarding them is the correct output (approach one)
+print('\nNo. of location blank cases: {}'.format(len(responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == '')])))
+responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == ''), 'predicted_name'] = ''
+responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == ''), 'matched_uid'] = ''
+responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == ''), 'matched_block_baseline'] = ''
+responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == ''), 'matched_block_april'] = ''
+responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == ''), 'matched_district'] = ''
+responses.loc[(responses['block_prediction'] == '') & (responses['district_prediction'] == ''), 'matched_designation'] = ''
+
 #simple statistical count of different cases
 responses['name_absent'] = responses['mp_apo_name'].fillna('').apply(lambda x: 1 if (x=='')|(x=='NAN') else 0)
 responses['name_exact_match'] = responses['name_score'].apply(lambda x: 1 if x==100 else 0)
@@ -149,17 +160,18 @@ responses['name_match_and_block_match'] = 0
 responses.loc[(responses['name_score']==100) &(responses['blocks_exact_match']==1), 'name_match_and_block_match'] = 1
 responses['name_good_and_blocks_match'] = 0
 responses.loc[(responses['name_score']>80) &(responses['blocks_exact_match']==1), 'name_good_and_blocks_match'] = 1
-# responses['designation_mismatch'] = 0
-# responses.loc[(responses['approach'] == 1) & (responses['matched_designation'].apply(lambda x: str(x).strip()) not in responses['Designation'].apply(lambda x: str(x).strip())), 'designation_mismatch'] = 1
 
 print('\nNo. of absent names: {}'.format(responses['name_absent'].sum()))
 print('\nNo. of exact matching names: {}'.format(responses['name_exact_match'].sum()))
 print('\nNo. of exact name matches with block exact matches: {}'.format(responses['name_match_and_block_match'].sum()))
 print('\nNo. of good name matches: {}'.format(responses['name_above_threshold'].sum()))
 print('\nNo. of good name matches and block exact matches: {}'.format(responses['name_good_and_blocks_match'].sum()))
-# print('\nNo. of designation mismatches: {}'.format(responses['name_good_and_blocks_match'].sum()))
 
-print(responses[responses['matched_designation'].apply(lambda x: str(x).strip()) not in responses['Designation'].apply(lambda x: str(x).strip())])
 #keep only relevant columns
+designation_mismatch = responses.loc[(responses['approach'] == 1) & (responses['matched_designation'].apply(lambda x: str(x).strip()) != responses['Designation'].apply(lambda x: str(x).replace('Block ', '').replace('A', '').strip())) & (responses['matched_designation'].apply(lambda x: str(x).strip()) !='')]
+print(designation_mismatch)
+designation_mismatch = designation_mismatch[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'block_prediction_score', 'district_prediction', 'district_prediction_score', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid','matched_designation','approach']]
+designation_mismatch.to_excel('../docs/designation_mismatch_scrutiny_' + output_date+ '.xlsx', index = False)
+
 responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'block_prediction_score', 'district_prediction', 'district_prediction_score', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid','matched_designation','approach']]
 responses.to_excel('../docs/matching_names_output_' + output_date + '.xlsx', index = False)
