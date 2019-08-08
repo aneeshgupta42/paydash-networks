@@ -4,10 +4,10 @@ from fuzzywuzzy import process
 import numpy as np
 import math
 import datetime
-from helpers import exact_matches
-from helpers import separator_present
-from helpers import handle_dash
-from helpers import handle_no_punc
+from locationmatching.helpers import exact_matches
+from locationmatching.helpers import separator_present
+from locationmatching.helpers import handle_dash
+from locationmatching.helpers import handle_no_punc
 
 
 def combine_blocks_and_districts(row):
@@ -20,13 +20,13 @@ def combine_blocks_and_districts(row):
 def process_files():
 
 	df_networks = \
-			pd.read_csv('../docs/block_level_responses_all.csv')
+			pd.read_csv('./docs/block_level_responses_all.csv')
 
 	# set all Locations from Nan to None
 	df_networks['Location'] = \
 			df_networks['Location'].replace({pd.np.nan: None})
 
-	df_blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
+	df_blocks = pd.read_csv('./docs/mp_blocks_2017-2018.csv')
 
 	# Only MP
 	df_blocks = df_blocks.loc[df_blocks['state_code'] == 17]
@@ -55,13 +55,6 @@ def handle_all_cases(row):
 
 
 def hit_cases(df_networks, df_blocks):
-<<<<<<< HEAD:case_specific_matches_code_separator/main.py
-
-	#df_networks = df_networks.iloc[:5]
-=======
-
-	#df_networks = df_networks.iloc[:400]
->>>>>>> 644a6610c7e06b83a3daafab7ce3f32a7814ae55:archive/case_specific_matches_code_separator/main.py
 
 	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 'Location']]
 
@@ -102,10 +95,11 @@ def main():
 	df_networks_final = hit_cases(df_networks, df_blocks)
 
 	df_networks_final.drop(columns=['Location_std'], inplace=True)
-	
+
 	print(df_networks_final.head(50))
-	df_networks_final.to_csv('./output/match_31072019.csv', index=False)
+	#df_networks_final.to_csv('./output/match_31072019.csv', index=False)
+	df_networks_final.to_csv('./docs/location_matched_blocks.csv', index=False)
 
 
-if __name__ == '__main__':
-	main()
+#if __name__ == '__main__':
+#	main()

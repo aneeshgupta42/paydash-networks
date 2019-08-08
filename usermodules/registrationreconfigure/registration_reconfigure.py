@@ -17,7 +17,7 @@ def clean_title(x):
 
 def process_file():
 
-	df = pd.read_excel('../docs/20171113_MP_Transfers_Registration_Combined_April end.xlsx', usecols='A:JK')
+	df = pd.read_excel('./docs/20171113_MP_Transfers_Registration_Combined_April end.xlsx', usecols='A:JK')
 	print(df.head())
 	#print(df['Unnamed: 7'].head())
 	df['Unnamed: 3'] = df['Unnamed: 3'].fillna('')
@@ -176,10 +176,13 @@ def main():
 	print('DISTRICTS MERGED')
 	print(districts_merged)
 
-	with pd.ExcelWriter('../docs/name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
+	with pd.ExcelWriter('./docs/name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
 		blocks_merged.to_excel(writer, sheet_name='Block_Officials', index=False)
 		districts_merged.to_excel(writer, sheet_name='District_Officials', index=False)
+	print('\nA reformatted registration sheet has been outputted as name_loc_designation_match.xlsx...')
+	print('The next step before going on to namematching is to manually create the two files name_loc_designation_match_edited and name_loc_designation_match_edited_two')
 
 
-if __name__ == '__main__':
-	main()
+
+#if __name__ == '__main__':
+#	main()

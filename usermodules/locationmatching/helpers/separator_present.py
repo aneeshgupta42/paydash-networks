@@ -21,7 +21,7 @@ def splice2(x):
 
 def block_prediction(block_name):
 
-    blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
+    blocks = pd.read_csv('./docs/mp_blocks_2017-2018.csv')
     blocks = blocks[blocks['state_code'] == 17]
     blist = list(blocks['block_name'].unique())
     blist.sort()
@@ -33,7 +33,7 @@ def block_prediction(block_name):
 
 def district_prediction(district_name):
 
-    districts = pd.read_csv('../docs/mp_districts_2017-2018.csv')
+    districts = pd.read_csv('./docs/mp_districts_2017-2018.csv')
     districts = districts[districts['state_code'] == 17]
     dlist = list(districts['block_name'].unique())
     dlist.sort()
@@ -47,13 +47,13 @@ def district_prediction(district_name):
 def make_predictions(df):
 
     k = '('
-    districts = pd.read_csv('../docs/mp_districts_2017-2018.csv')
+    districts = pd.read_csv('./docs/mp_districts_2017-2018.csv')
     districts = districts[districts['state_code'] == 17]
     dlist = list(districts['district_name'].unique())
     dlist.sort()
     dlist = [x.upper() for x in dlist]
 
-    blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
+    blocks = pd.read_csv('./docs/mp_blocks_2017-2018.csv')
     blocks = blocks[blocks['state_code'] == 17]
     blist = list(blocks['block_name'].unique())
     blist.sort()
@@ -99,5 +99,5 @@ def make_predictions(df):
         df.loc[(df['district_name'] == i) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'district_prediction_score'] = temp[2]
 
     df = df.drop(columns = ['block_name', 'district_name', 'separator_present'])
-    
+
     return df
