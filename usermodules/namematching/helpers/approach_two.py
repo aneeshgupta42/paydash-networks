@@ -5,11 +5,12 @@ from fuzzywuzzy import process
 import re
 import numpy as np
 import math
+import datetime
 #from collections import defaultdict
 
-from helpers import approach_two_block_pred
-from helpers import approach_two_district_pred
-from helpers import approach_two_both_pred
+import namematching.helpers.approach_two_block_pred
+import namematching.helpers.approach_two_district_pred
+import namematching.helpers.approach_two_both_pred
 
 
 # clean title only needs to be applied to registration dataframe here in
@@ -31,7 +32,7 @@ def clean_title(x):
 
 def process_files():
 
-	responses = pd.read_excel('../docs/approach_one_output.xlsx')
+	responses = pd.read_excel('./docs/approach_one_output.xlsx')
 
 	#print(responses)
 	#responses = responses.iloc[1000:2000]
@@ -41,7 +42,7 @@ def process_files():
 	# edited it, which is documented
 	# it also has Sehore district data now at the bottom with
 	# dummy uid's - we don't have those yet
-	registration = pd.read_excel('../docs/name_loc_designation_match_edited_two.xlsx',
+	registration = pd.read_excel('./docs/name_loc_designation_match_edited_two.xlsx',
 								 sheet_name = 0)
 	registration.rename(columns={'block_name_baseline': 'block_name',
 								 'district_name_baseline': 'district_name',
@@ -62,9 +63,8 @@ def process_files():
 
 	print(df_registration)
 
-
 	#print(responses.loc[responses['Designation'].isna(), 'Designation'])
-#	print(responses['Designation'].loc[(responses['Designation'] != "Block APO") & (responses['Designation'] != "Block CEO")])
+	#print(responses['Designation'].loc[(responses['Designation'] != "Block APO") & (responses['Designation'] != "Block CEO")])
 	return responses, df_registration
 
 
@@ -85,6 +85,7 @@ def set_empty_match_columns(row):
 # for example, "FIRST LAST" -> "F LAST"
 # for example, "FIRST MIDDLE LAST" -> "F M LAST"
 def get_initialed_name(name_original):
+
 	# only if no periods exist
 	if '.' not in name_original:
 		name_list = name_original.split()
@@ -108,6 +109,7 @@ def set_match_data(row, df_registration_subset, fuzzy_calc):
 
 
 def match_row(row, df_registration):
+
 	#print(row['Name'])
 	# already been covered in approach 1
 	if row['approach'] == 1:
@@ -185,8 +187,9 @@ def perform_name_matching(responses, df_registration):
 	return responses
 
 
-def main():
+def approach_two():
 
+	output_date = datetime.datetime.now().strftime("%d%m%Y")
 	pd.options.mode.chained_assignment = None
 	responses, df_registration = process_files()
 
@@ -209,9 +212,9 @@ def main():
 	#print(responses.loc[responses['Designation'].isnull() | responses['Designation'] == ''])
 	print(responses.loc[responses['Designation'].isna()])
 	print('after')
-	#responses.to_excel('matching_names_from_responses_changed_01082019.xlsx', index = False)
+	responses.to_excel('./docs/mp_block_name_matching_output_' + output_date + '.xlsx', index = False)
 
 
 
-if __name__ == '__main__':
-	main()
+#if __name__ == '__main__':
+#	main()

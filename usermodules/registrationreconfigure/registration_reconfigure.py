@@ -180,7 +180,7 @@ def main():
 		blocks_merged.to_excel(writer, sheet_name='Block_Officials', index=False)
 		districts_merged.to_excel(writer, sheet_name='District_Officials', index=False)
 	print('\nA reformatted registration sheet has been outputted as name_loc_designation_match.xlsx...')
-	print('The next step before going on to namematching is to manually create the two files name_loc_designation_match_edited and name_loc_designation_match_edited_two')
+	print('The next step before going on to namematching is to manually create the two files name_loc_designation_match_edited and name_loc_designation_match_edited_two, and place these in the docs folder...')
 
 
 

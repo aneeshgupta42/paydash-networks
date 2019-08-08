@@ -4,13 +4,13 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-import approach_two #import get_initialed_name, set_empty_match_columns
+import namematching.helpers.approach_two #import get_initialed_name, set_empty_match_columns
 
 
 def process_pred_on_district(row, df_registration):
-	
+
 	df_registration_subset_district = df_registration.loc[(df_registration['district_name'] == row['district_prediction'])]
-	
+
 	# Grab a further subset by designation if it exists in row
 	if isinstance(row['Designation'], str):
 		df_registration_subset_district = df_registration_subset_district.loc[(df_registration_subset_district['Designation'] == row['Designation'])]

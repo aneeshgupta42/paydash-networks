@@ -4,19 +4,19 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-import approach_two
+import namematching.helpers.approach_two
 
 
 def process_pred_on_block(row, df_registration):
 
 	# get block match subset
 	df_registration_subset_block = df_registration.loc[(df_registration['block_name'] == row['block_prediction'])]
-	
+
 	# Grab a further subset by designation if it exists in row
 	if isinstance(row['Designation'], str):
 		df_registration_subset_block = df_registration_subset_block.loc[(df_registration_subset_block['Designation'] == row['Designation'])]
 
-	
+
 	# with one word, compare to full names
 	if len(row['Name'].split()) == 1:
 		# set both name_final and name_initial column to the original names
