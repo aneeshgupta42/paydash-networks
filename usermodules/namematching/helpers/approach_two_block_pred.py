@@ -4,7 +4,7 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-import namematching.helpers.approach_two
+import namematching.helpers.approach_two as approach_two
 
 
 def process_pred_on_block(row, df_registration):

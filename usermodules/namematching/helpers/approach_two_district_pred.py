@@ -4,7 +4,8 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-import namematching.helpers.approach_two #import get_initialed_name, set_empty_match_columns
+import namematching.helpers.approach_two as approach_two
+#import get_initialed_name, set_empty_match_columns
 
 
 def process_pred_on_district(row, df_registration):

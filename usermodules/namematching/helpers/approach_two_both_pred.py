@@ -4,13 +4,13 @@ import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
-import namematching.helpers.approach_two
+import namematching.helpers.approach_two as approach_two
 
 # this checks the block, district prediction combination
 # in the current mp_blocks doc
 def check_correct_loc_combination(row):
 
-	df_mp_blocks = pd.read_csv('../docs/mp_blocks_2017-2018.csv')
+	df_mp_blocks = pd.read_csv('./docs/mp_blocks_2017-2018.csv')
 
 	# check if block, district combination is empty
 	# need to strip because it wasn't covering that extra space in KATNI

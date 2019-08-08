@@ -9,5 +9,5 @@ def main():
     approach_one()
     time.sleep(2)
     print('\nBeggining approach two (location first matching)...')
-    apporach_two()
+    approach_two()
     print('\nName matching also completed. Check docs for final output...')

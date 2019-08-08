@@ -8,9 +8,9 @@ import math
 import datetime
 #from collections import defaultdict
 
-import namematching.helpers.approach_two_block_pred
-import namematching.helpers.approach_two_district_pred
-import namematching.helpers.approach_two_both_pred
+import namematching.helpers.approach_two_block_pred as approach_two_block_pred
+import namematching.helpers.approach_two_district_pred as approach_two_district_pred
+import namematching.helpers.approach_two_both_pred as approach_two_both_pred
 
 
 # clean title only needs to be applied to registration dataframe here in
