@@ -1,6 +1,4 @@
 # approach_two.py
-
-
 import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -9,9 +7,9 @@ import numpy as np
 import math
 #from collections import defaultdict
 
-import approach_two_block_pred
-import approach_two_district_pred
-import approach_two_both_pred
+from helpers import approach_two_block_pred
+from helpers import approach_two_district_pred
+from helpers import approach_two_both_pred
 
 
 # clean title only needs to be applied to registration dataframe here in
@@ -33,7 +31,7 @@ def clean_title(x):
 
 def process_files():
 
-	responses = pd.read_excel('../docs/matching_names_output_31072019.xlsx')
+	responses = pd.read_excel('../docs/approach_one_output.xlsx')
 
 	#print(responses)
 	#responses = responses.iloc[1000:2000]
@@ -43,7 +41,7 @@ def process_files():
 	# edited it, which is documented
 	# it also has Sehore district data now at the bottom with
 	# dummy uid's - we don't have those yet
-	registration = pd.read_excel('name_loc_designation_match_edited.xlsx', 
+	registration = pd.read_excel('../docs/name_loc_designation_match_edited_two.xlsx',
 								 sheet_name = 0)
 	registration.rename(columns={'block_name_baseline': 'block_name',
 								 'district_name_baseline': 'district_name',

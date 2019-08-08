@@ -174,4 +174,4 @@ designation_mismatch = designation_mismatch[['respondent_uid', 'mp_apo_name', 'D
 designation_mismatch.to_excel('../docs/designation_mismatch_scrutiny_' + output_date+ '.xlsx', index = False)
 
 responses = responses[['respondent_uid', 'mp_apo_name', 'Designation', 'Location', 'block_prediction', 'block_prediction_score', 'district_prediction', 'district_prediction_score', 'predicted_name','name_score','matched_block_baseline','matched_block_april', 'blocks_exact_match', 'matched_district', 'district_exact_match','matched_uid','matched_designation','approach']]
-responses.to_excel('../docs/matching_names_output_' + output_date + '.xlsx', index = False)
+responses.to_excel('../docs/approach_one_output.xlsx', index = False)
