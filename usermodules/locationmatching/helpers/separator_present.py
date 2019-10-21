@@ -18,7 +18,10 @@ def splice2(x):
         return x.split("(")[1].replace(')', '')
     else: return ''
 
-
+#unused method that just shows a template for the location matching
+#we read the location (in this case blocks) masterfile, and get a list of all true names
+#convert to uppercase
+#use process.extractOne to get the matching string out of the list with the highest confidence score
 def block_prediction(block_name):
 
     blocks = pd.read_csv('./docs/mp_blocks_2017-2018.csv')
@@ -82,6 +85,8 @@ def make_predictions(df):
     dmatch = []
     ddict = {}
 
+    #iterating through the block names we have
+    #and finding the top match for each from the blocks masterlist
     for k in ourb:
         temp = (k,) + process.extractOne(k, blist)
         bdict[k] = temp[1]
@@ -90,6 +95,8 @@ def make_predictions(df):
         df.loc[(df['block_name'] == k) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'block_prediction'] = bdict[k]
         df.loc[(df['block_name'] == k) & (df['exact_match_blocks'] == 0) & (df['exact_match_districts'] == 0) & (df['exact_match_full_name'] == 0), 'block_prediction_score'] = temp[2]
 
+    #iterating through the district names we have
+    #and finding the top match for each from the district masterlist
     for i in ourd:
         temp = (i,) + process.extractOne(i, dlist)
         ddict[i] = temp[1]

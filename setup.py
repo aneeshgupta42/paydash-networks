@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='networks-cleaning',
+setup(name='paydash-networks',
 	version='1.0',
 	packages=['locationmatching', 'namematching','registrationreconfigure'],
 	#scripts=['usermodules/shared/scripts/utils.py','usermodules/shared/scripts/connections.py'],

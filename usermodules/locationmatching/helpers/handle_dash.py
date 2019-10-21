@@ -21,6 +21,8 @@ def match_with_dash(df_networks_std, df_blocks_std):
 
 	# return index of first letter in dashed word
 	# NOTE: Assume only one dash
+	# Hard coded in Agar-Malwa as it is a district with a dash in its name
+	# As opposed to Block - District
 	def get_AM_word_index(s):
 
 		for word in s.split():

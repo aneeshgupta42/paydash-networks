@@ -1,4 +1,11 @@
-# approach_two.py
+'''
+We tackle 3 different types of cases within Approach 2 (which is the location first approach).
+After location matching, three cases exist: either we have just a block prediction, just a district prediction,
+or predictions for both a block and a district. As a high level overview, Approach 2 basically scopes in to the
+predicted location in the mastersheet, and searches for the best match to the response name (by comparing different calculations).
+'''
+
+#Approach Two refers to Location First matching
 import pandas as pd
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
@@ -8,6 +15,7 @@ import math
 import datetime
 #from collections import defaultdict
 
+#for the three different cases of location predictions
 import namematching.helpers.approach_two_block_pred as approach_two_block_pred
 import namematching.helpers.approach_two_district_pred as approach_two_district_pred
 import namematching.helpers.approach_two_both_pred as approach_two_both_pred
@@ -16,6 +24,9 @@ import namematching.helpers.approach_two_both_pred as approach_two_both_pred
 # clean title only needs to be applied to registration dataframe here in
 # approach 2 because responses df comes from Aneesh's output of approach 1
 # -- he already ran this same function on the original responses in approach 1
+
+#cleaning the name of titles such as Mr. Shri. Dr. etc etc
+#to ensure consistency b/w response and mastersheet
 def clean_title(x):
 
 	x = x.strip()
@@ -28,6 +39,15 @@ def clean_title(x):
 	x = x.strip()
 	return x
 
+def all_present(x):
+	x = x.strip()
+
+	all = '\AALL'
+	if(re.search(all, x)):
+		x = 1
+	else:
+		x = 0
+	return x
 
 
 def process_files():
@@ -38,11 +58,14 @@ def process_files():
 	#responses = responses.iloc[1000:2000]
 	print(responses)
 
+	#initialize this particular flag here
+	responses['block_not_in_district'] = 0
+
 	# this is edited in a specific format that is different that how Aneesh
 	# edited it, which is documented
 	# it also has Sehore district data now at the bottom with
 	# dummy uid's - we don't have those yet
-	registration = pd.read_excel('./docs/name_loc_designation_match_edited_two.xlsx',
+	registration = pd.read_excel('./docs/mastersheet_edited_two.xlsx',
 								 sheet_name = 0)
 	registration.rename(columns={'block_name_baseline': 'block_name',
 								 'district_name_baseline': 'district_name',
@@ -53,6 +76,7 @@ def process_files():
 
 	df_registration['Individual_UID'] = df_registration['Individual_UID'].apply(lambda x: int(x))
 	#df_registration['Name'] = df_registration['Name'].fillna('').str.upper()
+
 	# keep only datapoints with name input
 	df_registration = df_registration.loc[df_registration['Name'] != '']
 
@@ -154,7 +178,7 @@ def perform_name_matching(responses, df_registration):
 						   'Location', 'block_prediction',
 						   'block_prediction_score', 'district_prediction',
 						   'district_prediction_score', 'matched_designation',
-						   'approach']]
+						   'approach', 'block_not_in_district']]
 
 	responses.rename(columns={'mp_apo_name': 'Name'}, inplace=True)
 
@@ -206,15 +230,58 @@ def approach_two():
 							'predicted_name', 'name_score', 'matched_uid',
 							'matched_block_baseline', 'matched_block_april',
 							'matched_district', 'blocks_exact_match',
-							'district_exact_match', 'matched_designation',
+							'district_exact_match', 'block_not_in_district', 'matched_designation',
 							'approach']]
 
+	responses.rename(columns = {'blocks_exact_match' : 'blocks_exact', 'district_exact_match' : 'districts_exact'}, inplace = True)
+
 	#print(responses.loc[responses['Designation'].isnull() | responses['Designation'] == ''])
-	print(responses.loc[responses['Designation'].isna()])
-	print('after')
-	responses.to_excel('./docs/mp_block_name_matching_output_' + output_date + '.xlsx', index = False)
+	#print(responses.loc[responses['Designation'].isna()])
+	#print('after')
+	#rename NAN to '' to mantain consistency
+	responses['Name'] = responses['Name'].apply(lambda x: '' if (str(x).strip() == 'NAN') else x)
 
+	#handling cases where all is present in location or name
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'predicted_name'] = ''
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'matched_uid'] = ''
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'matched_block_baseline'] = ''
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'matched_block_april'] = ''
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'matched_district'] = ''
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'matched_designation'] = ''
+	#letting approach column be, as we can say that the correct thing to do is in fact to give no output
 
+	#Renaming approach from 1/2 to Name First/ Location First
+	responses['approach'] = responses['approach'].apply(lambda x: 'Name First' if str(x) == '1' else x)
+	responses['approach'] = responses['approach'].apply(lambda x: 'Location First' if str(x) == '2' else x)
 
-#if __name__ == '__main__':
-#	main()
+	#intialize flags
+	responses['location_missing'] = 0
+	responses['name_missing'] = 0
+	responses['designation_missing'] = 0
+	responses['all_present'] = 0
+	responses['unique_perfect_name_wrong_location'] = 0
+	responses['designation_mismatch'] = 0
+
+	#reorder columns
+	responses = \
+		responses[['respondent_uid', 'Name', 'name_missing', 'Designation', 'designation_missing', 'Location', 'location_missing', 'all_present',
+							'block_prediction', 'block_prediction_score',
+							'district_prediction', 'district_prediction_score',
+							'predicted_name', 'name_score', 'matched_uid',
+							'matched_block_baseline', 'matched_block_april',
+							'matched_district', 'blocks_exact',
+							'districts_exact', 'block_not_in_district', 'unique_perfect_name_wrong_location', 'matched_designation', 'designation_mismatch',
+							'approach']]
+
+	#add flags based on values of other columns
+	responses.loc[responses['Location'].isnull(), 'location_missing'] = 1
+	responses.loc[responses['Name'].apply(lambda x: str(x)) == '', 'name_missing'] = 1
+	responses.loc[responses['Designation'].isnull(), 'designation_missing'] = 1
+	responses.loc[(responses['Name'].apply(lambda x: all_present(str(x))) == 1) | (responses['Location'].apply(lambda x: all_present(str(x))) == 1), 'all_present'] = 1
+	responses.loc[(responses['name_score']==100) & ((responses['districts_exact'] == 0) | (responses['districts_exact'].fillna('') == '')) & ((responses['blocks_exact'] == 0) | (responses['blocks_exact'].fillna('') == '')), 'unique_perfect_name_wrong_location'] = 1
+	responses.loc[(responses['matched_designation'].apply(lambda x: str(x).strip()) != responses['Designation'].apply(lambda x: str(x).replace('Block ', '').replace('A', '').strip())) & (responses['matched_designation'].fillna('') != '') & (responses['Designation'].fillna('') != ''), 'designation_mismatch'] = 1
+
+	#print(responses.loc[(responses['matched_block_april'].fillna('') != responses['matched_block_baseline'].fillna('')) & (responses['approach'] == 'Name First')][['matched_block_baseline', 'matched_block_april']])
+
+	#final output as excel file
+	responses.to_excel('./docs/mp_block_matching_output_' + output_date + '.xlsx', index = False)

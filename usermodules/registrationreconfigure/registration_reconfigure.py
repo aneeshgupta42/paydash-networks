@@ -1,7 +1,12 @@
 import pandas as pd
 import re
 
+#This code will be needed to adapted for different registration sheets for different states
+#At the time of writing, the team only had access to the MP registration sheet
+#This can basically be thought of as a standalone script for all purposes
 
+#cleaning the name of titles such as Mr. Shri. Dr. etc etc
+#to ensure consistency b/w response and mastersheet
 def clean_title(x):
 
 	x = x.strip()
@@ -175,12 +180,12 @@ def main():
 	print(blocks_merged)
 	print('DISTRICTS MERGED')
 	print(districts_merged)
-
-	with pd.ExcelWriter('./docs/name_loc_designation_match.xlsx') as writer:  # doctest: +SKIP
+	#getting the district level officers and block level officers in different tabs
+	with pd.ExcelWriter('./docs/mastersheet.xlsx') as writer:  # doctest: +SKIP
 		blocks_merged.to_excel(writer, sheet_name='Block_Officials', index=False)
 		districts_merged.to_excel(writer, sheet_name='District_Officials', index=False)
-	print('\nA reformatted registration sheet has been outputted as name_loc_designation_match.xlsx...')
-	print('The next step before going on to namematching is to manually create the two files name_loc_designation_match_edited and name_loc_designation_match_edited_two, and place these in the docs folder...')
+	print('\nA reformatted registration sheet has been outputted as mastersheet.xlsx...')
+	print('The next step before going on to namematching is to manually create the two files mastersheet_edited_one and mastersheet_edited_two, and place these in the docs folder...')
 
 
 

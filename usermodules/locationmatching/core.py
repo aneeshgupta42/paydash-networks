@@ -9,14 +9,15 @@ from locationmatching.helpers import separator_present
 from locationmatching.helpers import handle_dash
 from locationmatching.helpers import handle_no_punc
 
-
+#concatenate block and district name with a comma in between
+#'Block, District'
 def combine_blocks_and_districts(row):
 
 	full_name = row['block_name'] + ', ' + row['district_name']
 
 	return full_name
 
-
+#Read block level responses and the blocks masterlist
 def process_files():
 
 	df_networks = \
@@ -36,7 +37,7 @@ def process_files():
 
 	return df_networks, df_blocks
 
-
+#don't location match for location containing 'ALL' in them
 def handle_all_cases(row):
 
 	if not isinstance(row['Location'], str) or not row['Location']:
@@ -53,7 +54,8 @@ def handle_all_cases(row):
 
 	return row
 
-
+#Apply all the cases:
+#exact matches, presence of separator, presence of a dash, and presence of no punctuation
 def hit_cases(df_networks, df_blocks):
 
 	df_networks = df_networks[['Res_uid', 'Name', 'Designation', 'Location']]

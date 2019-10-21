@@ -8,6 +8,7 @@ import namematching.helpers.approach_two as approach_two
 
 # this checks the block, district prediction combination
 # in the current mp_blocks doc
+# checks if the matched block actually lies in the matched district
 def check_correct_loc_combination(row):
 
 	df_mp_blocks = pd.read_csv('./docs/mp_blocks_2017-2018.csv')
@@ -158,6 +159,7 @@ def process_pred_on_both(row, df_registration):
 		# block, district combination incorrect
 		# compare matches on block and on district and take higher of the two
 		print('check_correct_loc_combination False')
+		row['block_not_in_district'] = 1
 		# first if response is one word
 		if len(row['Name'].split()) == 1:
 			print('len == 1')
