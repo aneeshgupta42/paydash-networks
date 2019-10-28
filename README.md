@@ -1,4 +1,4 @@
-# Package for cleaning social networks data on the PayDash project
+# Package for cleaning and mapping social networks on the PayDash project
 
 ## Purpose
 
